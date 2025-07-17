@@ -30,6 +30,15 @@ export class User {
   id: string;
 
   @ApiProperty({
+    description: 'Mã người dùng (mã sinh viên/giảng viên/nhân viên)',
+    example: 'GV001 hoặc SV20020001 hoặc NV001',
+    maxLength: 20,
+    required: false,
+  })
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  userCode?: string;
+
+  @ApiProperty({
     description: 'Tên đăng nhập (duy nhất)',
     example: 'nguyen_van_a',
   })

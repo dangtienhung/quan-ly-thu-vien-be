@@ -18,6 +18,9 @@ async function bootstrap() {
     }),
   );
 
+  // add /api prefix
+  app.setGlobalPrefix('api');
+
   // Enable class-transformer serialization
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
@@ -39,11 +42,6 @@ async function bootstrap() {
     .addTag('Users', 'Quản lý người dùng')
     .addTag('Reader Types', 'Quản lý loại độc giả')
     .addTag('Readers', 'Quản lý độc giả')
-    .addTag('Books', 'Quản lý sách')
-    .addTag('Authors', 'Quản lý tác giả')
-    .addTag('Categories', 'Quản lý thể loại')
-    .addTag('Patrons', 'Quản lý độc giả')
-    .addTag('Borrowing', 'Quản lý mượn/trả')
     .addBearerAuth() // Thêm authentication nếu cần
     .build();
 

@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -11,6 +12,21 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
+  @ApiProperty({
+    description: 'Mã người dùng (mã sinh viên/giảng viên/nhân viên)',
+    example: 'GV001 hoặc SV20020001 hoặc NV001',
+    maxLength: 20,
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Mã người dùng phải là chuỗi ký tự' })
+  @MaxLength(20, { message: 'Mã người dùng không được quá 20 ký tự' })
+  @Matches(/^[A-Z]{2}[0-9]+$/, {
+    message:
+      'Mã người dùng phải bắt đầu bằng 2 chữ cái in hoa (GV/SV/NV) và theo sau là số',
+  })
+  userCode?: string;
+
   @ApiProperty({
     description: 'Tên đăng nhập (duy nhất)',
     example: 'nguyen_van_a',

@@ -27,7 +27,7 @@ import { UpdateReaderDto } from './dto/update-reader.dto';
 import { Reader } from './entities/reader.entity';
 import { ReadersService } from './readers.service';
 
-@ApiTags('readers')
+@ApiTags('Readers')
 @Controller('readers')
 export class ReadersController {
   constructor(private readonly readersService: ReadersService) {}
