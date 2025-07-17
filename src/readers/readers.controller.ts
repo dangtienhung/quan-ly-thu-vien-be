@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -18,33 +20,39 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateReaderDto } from './dto/create-reader.dto';
 import { UpdateReaderDto } from './dto/update-reader.dto';
 import { Reader } from './entities/reader.entity';
 import { ReadersService } from './readers.service';
 
-@ApiTags('Readers')
+@ApiTags('Quản lý Độc Giả')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('readers')
 export class ReadersController {
   constructor(private readonly readersService: ReadersService) {}
 
   // CREATE - Tạo reader mới
   @Post()
-  @ApiOperation({ summary: 'Create a new reader profile' })
+  @ApiOperation({ summary: 'Tạo hồ sơ độc giả mới' })
   @ApiBody({ type: CreateReaderDto })
   @ApiResponse({
     status: 201,
-    description: 'Reader created successfully.',
+    description: 'Tạo hồ sơ độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ.' })
   @ApiResponse({
     status: 409,
-    description: 'User already has a reader profile or card number exists.',
+    description: 'Người dùng đã có hồ sơ độc giả hoặc số thẻ đã tồn tại.',
   })
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createReaderDto: CreateReaderDto): Promise<Reader> {
@@ -53,20 +61,23 @@ export class ReadersController {
 
   // READ ALL - Danh sách readers
   @Get()
-  @ApiOperation({ summary: 'Get all readers with pagination' })
+  @ApiOperation({ summary: 'Lấy danh sách độc giả có phân trang' })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
-  @ApiResponse({ status: 200, description: 'Readers retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách độc giả thành công.',
+  })
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<Reader>> {
@@ -76,24 +87,25 @@ export class ReadersController {
   // SEARCH - Tìm kiếm readers
   @Get('search')
   @ApiOperation({
-    summary: 'Search readers by name, card number, phone, username, or email',
+    summary:
+      'Tìm kiếm độc giả theo tên, số thẻ, số điện thoại, tên đăng nhập hoặc email',
   })
-  @ApiQuery({ name: 'q', required: true, description: 'Search query' })
+  @ApiQuery({ name: 'q', required: true, description: 'Từ khóa tìm kiếm' })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
   @ApiResponse({
     status: 200,
-    description: 'Search results retrieved successfully.',
+    description: 'Tìm kiếm độc giả thành công.',
   })
   async search(
     @Query('q') query: string,
@@ -104,22 +116,22 @@ export class ReadersController {
 
   // UTILITY - Get expired cards
   @Get('expired-cards')
-  @ApiOperation({ summary: 'Get readers with expired cards' })
+  @ApiOperation({ summary: 'Lấy danh sách độc giả có thẻ đã hết hạn' })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
   @ApiResponse({
     status: 200,
-    description: 'Expired cards retrieved successfully.',
+    description: 'Lấy danh sách thẻ hết hạn thành công.',
   })
   async getExpiredCards(
     @Query() paginationQuery: PaginationQueryDto,
@@ -129,28 +141,28 @@ export class ReadersController {
 
   // UTILITY - Get cards expiring soon
   @Get('expiring-soon')
-  @ApiOperation({ summary: 'Get readers with cards expiring soon' })
+  @ApiOperation({ summary: 'Lấy danh sách độc giả có thẻ sắp hết hạn' })
   @ApiQuery({
     name: 'days',
     required: false,
     type: Number,
-    description: 'Number of days to check (default: 30)',
+    description: 'Số ngày kiểm tra trước (mặc định: 30)',
   })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
   @ApiResponse({
     status: 200,
-    description: 'Cards expiring soon retrieved successfully.',
+    description: 'Lấy danh sách thẻ sắp hết hạn thành công.',
   })
   async getCardsExpiringSoon(
     @Query('days') days: number = 30,
@@ -161,10 +173,10 @@ export class ReadersController {
 
   // UTILITY - Generate card number
   @Get('generate-card-number')
-  @ApiOperation({ summary: 'Generate a new card number' })
+  @ApiOperation({ summary: 'Tạo số thẻ thư viện mới' })
   @ApiResponse({
     status: 200,
-    description: 'Card number generated successfully.',
+    description: 'Tạo số thẻ thành công.',
   })
   async generateCardNumber(): Promise<{ cardNumber: string }> {
     const cardNumber = await this.readersService.generateCardNumber();
@@ -173,21 +185,24 @@ export class ReadersController {
 
   // FILTER - Get readers by type
   @Get('type/:readerTypeId')
-  @ApiOperation({ summary: 'Get readers by reader type' })
-  @ApiParam({ name: 'readerTypeId', description: 'Reader type UUID' })
+  @ApiOperation({ summary: 'Lấy danh sách độc giả theo loại độc giả' })
+  @ApiParam({ name: 'readerTypeId', description: 'UUID của loại độc giả' })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
-  @ApiResponse({ status: 200, description: 'Readers retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách độc giả thành công.',
+  })
   async getReadersByType(
     @Param('readerTypeId') readerTypeId: string,
     @Query() paginationQuery: PaginationQueryDto,
@@ -197,28 +212,28 @@ export class ReadersController {
 
   // READ ONE - Tìm reader theo user ID
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Get a reader by user ID' })
-  @ApiParam({ name: 'userId', description: 'User UUID' })
+  @ApiOperation({ summary: 'Lấy thông tin độc giả theo ID người dùng' })
+  @ApiParam({ name: 'userId', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
-    description: 'Reader retrieved successfully.',
+    description: 'Lấy thông tin độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async findByUserId(@Param('userId') userId: string): Promise<Reader> {
     return this.readersService.findByUserId(userId);
   }
 
   // READ ONE - Tìm reader theo card number
   @Get('card/:cardNumber')
-  @ApiOperation({ summary: 'Get a reader by card number' })
-  @ApiParam({ name: 'cardNumber', description: 'Library card number' })
+  @ApiOperation({ summary: 'Lấy thông tin độc giả theo số thẻ thư viện' })
+  @ApiParam({ name: 'cardNumber', description: 'Số thẻ thư viện' })
   @ApiResponse({
     status: 200,
-    description: 'Reader retrieved successfully.',
+    description: 'Lấy thông tin độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async findByCardNumber(
     @Param('cardNumber') cardNumber: string,
   ): Promise<Reader> {
@@ -227,30 +242,30 @@ export class ReadersController {
 
   // READ ONE - Tìm reader theo ID
   @Get(':id')
-  @ApiOperation({ summary: 'Get a reader by ID' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  @ApiOperation({ summary: 'Lấy thông tin độc giả theo ID' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Reader retrieved successfully.',
+    description: 'Lấy thông tin độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async findOne(@Param('id') id: string): Promise<Reader> {
     return this.readersService.findOne(id);
   }
 
   // UPDATE - Cập nhật reader
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a reader by ID' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  @ApiOperation({ summary: 'Cập nhật thông tin độc giả theo ID' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiBody({ type: UpdateReaderDto })
   @ApiResponse({
     status: 200,
-    description: 'Reader updated successfully.',
+    description: 'Cập nhật thông tin độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
-  @ApiResponse({ status: 409, description: 'Card number already exists.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ.' })
   async update(
     @Param('id') id: string,
     @Body() updateReaderDto: UpdateReaderDto,
@@ -260,41 +275,41 @@ export class ReadersController {
 
   // UTILITY - Activate reader
   @Patch(':id/activate')
-  @ApiOperation({ summary: 'Activate a reader account' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  @ApiOperation({ summary: 'Kích hoạt thẻ độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Reader activated successfully.',
+    description: 'Kích hoạt thẻ độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async activateReader(@Param('id') id: string): Promise<Reader> {
     return this.readersService.activateReader(id);
   }
 
   // UTILITY - Deactivate reader
   @Patch(':id/deactivate')
-  @ApiOperation({ summary: 'Deactivate a reader account' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  @ApiOperation({ summary: 'Vô hiệu hóa thẻ độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Reader deactivated successfully.',
+    description: 'Vô hiệu hóa thẻ độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async deactivateReader(@Param('id') id: string): Promise<Reader> {
     return this.readersService.deactivateReader(id);
   }
 
-  // UTILITY - Check if card is expired
-  @Get(':id/card-expired')
-  @ApiOperation({ summary: 'Check if reader card is expired' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  // UTILITY - Check card expiry
+  @Get(':id/check-expiry')
+  @ApiOperation({ summary: 'Kiểm tra thẻ độc giả có hết hạn không' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Card expiry status retrieved successfully.',
+    description: 'Kiểm tra hạn thẻ thành công.',
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   async isCardExpired(
     @Param('id') id: string,
   ): Promise<{ isExpired: boolean }> {
@@ -304,8 +319,8 @@ export class ReadersController {
 
   // UTILITY - Renew card
   @Patch(':id/renew-card')
-  @ApiOperation({ summary: 'Renew reader card expiry date' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
+  @ApiOperation({ summary: 'Gia hạn thẻ độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -313,19 +328,18 @@ export class ReadersController {
         newExpiryDate: {
           type: 'string',
           format: 'date',
-          example: '2025-01-01',
+          description: 'Ngày hết hạn mới của thẻ (YYYY-MM-DD)',
         },
       },
-      required: ['newExpiryDate'],
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Card renewed successfully.',
+    description: 'Gia hạn thẻ độc giả thành công.',
     type: Reader,
   })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
-  @ApiResponse({ status: 400, description: 'Invalid expiry date.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
+  @ApiResponse({ status: 400, description: 'Ngày hết hạn không hợp lệ.' })
   async renewCard(
     @Param('id') id: string,
     @Body() body: { newExpiryDate: string },
@@ -335,14 +349,13 @@ export class ReadersController {
 
   // DELETE - Xóa reader
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a reader by ID' })
-  @ApiParam({ name: 'id', description: 'Reader UUID' })
-  @ApiResponse({ status: 204, description: 'Reader deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Reader not found.' })
+  @ApiOperation({ summary: 'Xóa hồ sơ độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của độc giả' })
   @ApiResponse({
-    status: 409,
-    description: 'Cannot delete reader with active borrowed books.',
+    status: 204,
+    description: 'Xóa hồ sơ độc giả thành công.',
   })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy độc giả.' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.readersService.remove(id);
