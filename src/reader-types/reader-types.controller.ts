@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -18,31 +20,36 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateReaderTypeDto } from './dto/create-reader-type.dto';
 import { UpdateReaderTypeDto } from './dto/update-reader-type.dto';
 import { ReaderType, ReaderTypeName } from './entities/reader-type.entity';
 import { ReaderTypesService } from './reader-types.service';
 
 @ApiTags('Reader Types')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('reader-types')
 export class ReaderTypesController {
   constructor(private readonly readerTypesService: ReaderTypesService) {}
 
-  // CREATE - Tạo reader type mới
   @Post()
-  @ApiOperation({ summary: 'Create a new reader type' })
+  @ApiOperation({ summary: 'Tạo loại độc giả mới' })
   @ApiBody({ type: CreateReaderTypeDto })
   @ApiResponse({
     status: 201,
-    description: 'Reader type created successfully.',
+    description: 'Tạo loại độc giả thành công.',
     type: ReaderType,
   })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 409, description: 'Reader type already exists.' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 409, description: 'Loại độc giả đã tồn tại.' })
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createReaderTypeDto: CreateReaderTypeDto,
@@ -50,24 +57,23 @@ export class ReaderTypesController {
     return this.readerTypesService.create(createReaderTypeDto);
   }
 
-  // READ ALL - Danh sách reader types
   @Get()
-  @ApiOperation({ summary: 'Get all reader types with pagination' })
+  @ApiOperation({ summary: 'Lấy danh sách loại độc giả với phân trang' })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Số trang (mặc định: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 10)',
+    description: 'Số lượng mỗi trang (mặc định: 10)',
   })
   @ApiResponse({
     status: 200,
-    description: 'Reader types retrieved successfully.',
+    description: 'Lấy danh sách loại độc giả thành công.',
   })
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
@@ -75,97 +81,90 @@ export class ReaderTypesController {
     return this.readerTypesService.findAll(paginationQuery);
   }
 
-  // READ ALL - Danh sách reader types không có pagination
   @Get('all')
-  @ApiOperation({ summary: 'Get all reader types without pagination' })
+  @ApiOperation({ summary: 'Lấy tất cả loại độc giả không phân trang' })
   @ApiResponse({
     status: 200,
-    description: 'Reader types retrieved successfully.',
+    description: 'Lấy danh sách loại độc giả thành công.',
   })
   async findAllWithoutPagination(): Promise<ReaderType[]> {
     return this.readerTypesService.findAllWithoutPagination();
   }
 
-  // UTILITY - Get reader type statistics
   @Get('statistics')
-  @ApiOperation({ summary: 'Get reader type statistics' })
+  @ApiOperation({ summary: 'Lấy thống kê theo loại độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Statistics retrieved successfully.',
+    description: 'Lấy thống kê thành công.',
   })
   async getStatistics(): Promise<any> {
     return this.readerTypesService.getReaderTypeStats();
   }
 
-  // UTILITY - Get default settings
   @Get('default-settings')
-  @ApiOperation({ summary: 'Get default reader type settings' })
+  @ApiOperation({ summary: 'Lấy cài đặt mặc định cho các loại độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Default settings retrieved successfully.',
+    description: 'Lấy cài đặt mặc định thành công.',
   })
   async getDefaultSettings(): Promise<any> {
     return this.readerTypesService.getDefaultSettings();
   }
 
-  // UTILITY - Initialize default types
   @Post('initialize-defaults')
-  @ApiOperation({ summary: 'Initialize default reader types' })
+  @ApiOperation({ summary: 'Khởi tạo các loại độc giả mặc định' })
   @ApiResponse({
     status: 200,
-    description: 'Default types initialized successfully.',
+    description: 'Khởi tạo loại độc giả mặc định thành công.',
   })
   async initializeDefaults(): Promise<{ message: string }> {
     await this.readerTypesService.initializeDefaultTypes();
-    return { message: 'Default reader types initialized successfully' };
+    return { message: 'Khởi tạo loại độc giả mặc định thành công' };
   }
 
-  // READ ONE - Tìm reader type theo type name
   @Get('type/:typeName')
-  @ApiOperation({ summary: 'Get a reader type by type name' })
+  @ApiOperation({ summary: 'Lấy thông tin loại độc giả theo tên' })
   @ApiParam({
     name: 'typeName',
-    description: 'Reader type name',
+    description: 'Tên loại độc giả',
     enum: ReaderTypeName,
   })
   @ApiResponse({
     status: 200,
-    description: 'Reader type retrieved successfully.',
+    description: 'Lấy thông tin loại độc giả thành công.',
     type: ReaderType,
   })
-  @ApiResponse({ status: 404, description: 'Reader type not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy loại độc giả.' })
   async findByTypeName(
     @Param('typeName') typeName: ReaderTypeName,
   ): Promise<ReaderType> {
     return this.readerTypesService.findByTypeName(typeName);
   }
 
-  // READ ONE - Tìm reader type theo ID
   @Get(':id')
-  @ApiOperation({ summary: 'Get a reader type by ID' })
-  @ApiParam({ name: 'id', description: 'Reader type UUID' })
+  @ApiOperation({ summary: 'Lấy thông tin loại độc giả theo ID' })
+  @ApiParam({ name: 'id', description: 'UUID của loại độc giả' })
   @ApiResponse({
     status: 200,
-    description: 'Reader type retrieved successfully.',
+    description: 'Lấy thông tin loại độc giả thành công.',
     type: ReaderType,
   })
-  @ApiResponse({ status: 404, description: 'Reader type not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy loại độc giả.' })
   async findOne(@Param('id') id: string): Promise<ReaderType> {
     return this.readerTypesService.findOne(id);
   }
 
-  // UPDATE - Cập nhật reader type
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a reader type by ID' })
-  @ApiParam({ name: 'id', description: 'Reader type UUID' })
+  @ApiOperation({ summary: 'Cập nhật thông tin loại độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của loại độc giả' })
   @ApiBody({ type: UpdateReaderTypeDto })
   @ApiResponse({
     status: 200,
-    description: 'Reader type updated successfully.',
+    description: 'Cập nhật loại độc giả thành công.',
     type: ReaderType,
   })
-  @ApiResponse({ status: 404, description: 'Reader type not found.' })
-  @ApiResponse({ status: 409, description: 'Reader type already exists.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy loại độc giả.' })
+  @ApiResponse({ status: 409, description: 'Loại độc giả đã tồn tại.' })
   async update(
     @Param('id') id: string,
     @Body() updateReaderTypeDto: UpdateReaderTypeDto,
@@ -173,18 +172,17 @@ export class ReaderTypesController {
     return this.readerTypesService.update(id, updateReaderTypeDto);
   }
 
-  // DELETE - Xóa reader type
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a reader type by ID' })
-  @ApiParam({ name: 'id', description: 'Reader type UUID' })
+  @ApiOperation({ summary: 'Xóa loại độc giả' })
+  @ApiParam({ name: 'id', description: 'UUID của loại độc giả' })
   @ApiResponse({
     status: 204,
-    description: 'Reader type deleted successfully.',
+    description: 'Xóa loại độc giả thành công.',
   })
-  @ApiResponse({ status: 404, description: 'Reader type not found.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy loại độc giả.' })
   @ApiResponse({
     status: 409,
-    description: 'Cannot delete reader type with associated readers.',
+    description: 'Không thể xóa loại độc giả đang có độc giả sử dụng.',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
