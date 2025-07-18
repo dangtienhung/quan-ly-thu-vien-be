@@ -32,7 +32,7 @@ import { UpdateReaderDto } from './dto/update-reader.dto';
 import { Reader } from './entities/reader.entity';
 import { ReadersService } from './readers.service';
 
-@ApiTags('Quản lý Độc Giả')
+@ApiTags('Readers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')

@@ -12,6 +12,7 @@ import { ReaderTypesModule } from './reader-types/reader-types.module';
 import { ReadersModule } from './readers/readers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
+import { PublishersModule } from './publishers/publishers.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ReaderTypesModule,
     ReadersModule,
+    PublishersModule,
   ],
   controllers: [AppController],
   providers: [
