@@ -42,6 +42,10 @@ async function bootstrap() {
     .addTag('Users', 'Quản lý người dùng')
     .addTag('Reader Types', 'Quản lý loại độc giả')
     .addTag('Readers', 'Quản lý độc giả')
+    .addTag('Categories', 'Quản lý thể loại')
+    .addTag('Publishers', 'Quản lý nhà xuất bản')
+    .addTag('Authors', 'Quản lý tác giả')
+    .addTag('Products', 'Quản lý sản phẩm')
     .addBearerAuth() // Thêm authentication nếu cần
     .build();
 
