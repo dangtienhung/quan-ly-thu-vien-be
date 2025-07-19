@@ -1,87 +1,83 @@
-import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { Transform } from 'class-transformer';
 import slug from 'slug';
 
 @Entity('categories')
 export class Category {
   @ApiProperty({
-    description: 'Category unique identifier (UUID)',
+    description: 'ID duy nhất của thể loại (UUID)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ApiProperty({
-    description: 'Category name',
-    example: 'Electronics',
+    description: 'Tên thể loại',
+    example: 'Sách Khoa Học',
+  })
+  @Column({ type: 'varchar', length: 255 })
+  category_name: string;
+
+  @ApiProperty({
+    description: 'Slug của thể loại (tự động tạo từ tên)',
+    example: 'sach-khoa-hoc',
   })
   @Column({ type: 'varchar', length: 255, unique: true })
-  name: string;
+  slug: string;
 
   @ApiProperty({
-    description: 'Category slug (URL-friendly identifier)',
-    example: 'electronics',
-    required: false,
-  })
-  @Column({ type: 'varchar', length: 300, unique: true, nullable: true })
-  slug?: string;
-
-  @ApiProperty({
-    description: 'Category description',
-    example: 'Electronic devices and accessories',
+    description: 'Mô tả về thể loại',
+    example: 'Các sách về khoa học, công nghệ, và khám phá',
     required: false,
   })
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID của thể loại cha (nếu là thể loại con)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    nullable: true,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  parent_id?: string;
+
+  @ManyToOne(() => Category, (category) => category.children)
+  @JoinColumn({ name: 'parent_id' })
+  parent?: Category;
+
+  @OneToMany(() => Category, (category) => category.parent)
+  children?: Category[];
 
   @ApiProperty({
-    description: 'Category creation date',
+    description: 'Ngày tạo',
     example: '2024-01-01T00:00:00.000Z',
   })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({
-    description: 'Category last update date',
+    description: 'Ngày cập nhật cuối cùng',
     example: '2024-01-01T00:00:00.000Z',
   })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
-  @ApiHideProperty()
-  @Transform(({ value }) =>
-    value
-      ? value.map((product) => ({
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          desc: product.desc,
-          price: product.price,
-          image: product.image,
-          createdAt: product.createdAt,
-          updatedAt: product.updatedAt,
-        }))
-      : [],
-  )
-  @OneToMany('Product', 'category')
-  products: any[];
-
+  // Tự động tạo slug từ tên thể loại
   @BeforeInsert()
   @BeforeUpdate()
   generateSlug() {
-    if (this.name) {
-      this.slug = slug(this.name, { lower: true });
-    }
+    this.slug = slug(this.category_name, { lower: true });
   }
 }

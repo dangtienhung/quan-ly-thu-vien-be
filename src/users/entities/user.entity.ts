@@ -42,7 +42,7 @@ export class User {
     description: 'Tên đăng nhập (duy nhất)',
     example: 'nguyen_van_a',
   })
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @Column({ type: 'varchar', length: 50 })
   username: string;
 
   @ApiHideProperty()

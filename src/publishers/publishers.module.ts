@@ -3,9 +3,10 @@ import { Publisher } from './entities/publisher.entity';
 import { PublishersController } from './publishers.controller';
 import { PublishersService } from './publishers.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Publisher])],
+  imports: [TypeOrmModule.forFeature([Publisher]), UsersModule],
   controllers: [PublishersController],
   providers: [PublishersService],
   exports: [PublishersService],

@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -18,23 +20,29 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // CREATE - Tạo user mới
   @Post()
-  @ApiOperation({ summary: 'Tạo mới người dùng' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Tạo mới người dùng (Admin)' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({
     status: 201,
@@ -46,6 +54,7 @@ export class UsersController {
     status: 409,
     description: 'Tên đăng nhập hoặc email đã tồn tại.',
   })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     return this.usersService.create(createUserDto);
@@ -53,7 +62,8 @@ export class UsersController {
 
   // READ ALL - Danh sách users
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách người dùng có phân trang' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Lấy danh sách người dùng có phân trang (Admin)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -70,6 +80,7 @@ export class UsersController {
     status: 200,
     description: 'Lấy danh sách người dùng thành công.',
   })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<User>> {
@@ -78,8 +89,10 @@ export class UsersController {
 
   // SEARCH - Tìm kiếm users
   @Get('search')
+  @Roles('admin')
   @ApiOperation({
-    summary: 'Tìm kiếm người dùng theo tên đăng nhập, email hoặc tên độc giả',
+    summary:
+      'Tìm kiếm người dùng theo tên đăng nhập, email hoặc tên độc giả (Admin)',
   })
   @ApiQuery({ name: 'q', required: true, description: 'Từ khóa tìm kiếm' })
   @ApiQuery({
@@ -98,6 +111,7 @@ export class UsersController {
     status: 200,
     description: 'Tìm kiếm người dùng thành công.',
   })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async search(
     @Query('q') query: string,
     @Query() paginationQuery: PaginationQueryDto,
@@ -107,7 +121,8 @@ export class UsersController {
 
   // FILTER - Get users by role
   @Get('role/:role')
-  @ApiOperation({ summary: 'Lấy danh sách người dùng theo vai trò' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Lấy danh sách người dùng theo vai trò (Admin)' })
   @ApiParam({ name: 'role', description: 'Vai trò người dùng', enum: UserRole })
   @ApiQuery({
     name: 'page',
@@ -125,6 +140,7 @@ export class UsersController {
     status: 200,
     description: 'Lấy danh sách người dùng thành công.',
   })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findByRole(
     @Param('role') role: UserRole,
     @Query() paginationQuery: PaginationQueryDto,
@@ -134,8 +150,9 @@ export class UsersController {
 
   // FILTER - Get users by account status
   @Get('status/:status')
+  @Roles('admin')
   @ApiOperation({
-    summary: 'Lấy danh sách người dùng theo trạng thái tài khoản',
+    summary: 'Lấy danh sách người dùng theo trạng thái tài khoản (Admin)',
   })
   @ApiParam({
     name: 'status',
@@ -158,6 +175,7 @@ export class UsersController {
     status: 200,
     description: 'Lấy danh sách người dùng thành công.',
   })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findByAccountStatus(
     @Param('status') status: AccountStatus,
     @Query() paginationQuery: PaginationQueryDto,
@@ -167,7 +185,10 @@ export class UsersController {
 
   // READ ONE - Tìm user theo username
   @Get('username/:username')
-  @ApiOperation({ summary: 'Lấy thông tin người dùng theo tên đăng nhập' })
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Lấy thông tin người dùng theo tên đăng nhập (Admin)',
+  })
   @ApiParam({ name: 'username', description: 'Tên đăng nhập' })
   @ApiResponse({
     status: 200,
@@ -175,13 +196,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findByUsername(@Param('username') username: string): Promise<User> {
     return this.usersService.findByUsername(username);
   }
 
   // READ ONE - Tìm user theo email
   @Get('email/:email')
-  @ApiOperation({ summary: 'Lấy thông tin người dùng theo email' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Lấy thông tin người dùng theo email (Admin)' })
   @ApiParam({ name: 'email', description: 'Địa chỉ email' })
   @ApiResponse({
     status: 200,
@@ -189,13 +212,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findByEmail(@Param('email') email: string): Promise<User> {
     return this.usersService.findByEmail(email);
   }
 
   // READ ONE - Tìm user theo ID
   @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
@@ -203,13 +228,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findOne(@Param('id') id: string): Promise<User> {
     return this.usersService.findOne(id);
   }
 
   // UPDATE - Cập nhật user
   @Patch(':id')
-  @ApiOperation({ summary: 'Cập nhật thông tin người dùng theo ID' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Cập nhật thông tin người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({
@@ -218,6 +245,7 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   @ApiResponse({
     status: 409,
     description: 'Tên đăng nhập hoặc email đã tồn tại.',
@@ -231,7 +259,8 @@ export class UsersController {
 
   // UTILITY - Suspend user
   @Patch(':id/suspend')
-  @ApiOperation({ summary: 'Tạm khóa tài khoản người dùng' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Tạm khóa tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
@@ -239,13 +268,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async suspendUser(@Param('id') id: string): Promise<User> {
     return this.usersService.suspendUser(id);
   }
 
   // UTILITY - Reactivate user
   @Patch(':id/reactivate')
-  @ApiOperation({ summary: 'Kích hoạt lại tài khoản người dùng' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Kích hoạt lại tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
@@ -253,13 +284,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async reactivateUser(@Param('id') id: string): Promise<User> {
     return this.usersService.reactivateUser(id);
   }
 
   // UTILITY - Ban user
   @Patch(':id/ban')
-  @ApiOperation({ summary: 'Cấm tài khoản người dùng' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Cấm tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
@@ -267,13 +300,15 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async banUser(@Param('id') id: string): Promise<User> {
     return this.usersService.banUser(id);
   }
 
   // UTILITY - Update last login
   @Patch(':id/last-login')
-  @ApiOperation({ summary: 'Cập nhật thời gian đăng nhập cuối cùng' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Cập nhật thời gian đăng nhập cuối cùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 200,
@@ -281,19 +316,22 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async updateLastLogin(@Param('id') id: string): Promise<User> {
     return this.usersService.updateLastLogin(id);
   }
 
   // DELETE - Xóa user
   @Delete(':id')
-  @ApiOperation({ summary: 'Xóa người dùng theo ID' })
+  @Roles('admin')
+  @ApiOperation({ summary: 'Xóa người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
     status: 204,
     description: 'Xóa người dùng thành công.',
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);

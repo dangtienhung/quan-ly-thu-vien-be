@@ -47,22 +47,14 @@ export class AuthService {
     // Cập nhật thời gian đăng nhập cuối cùng
     await this.usersService.updateLastLogin(user.id);
 
+    // Chỉ mã hóa id trong payload
     const payload = {
       sub: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
     };
 
+    // Chỉ trả về token
     return {
       access_token: await this.jwtService.signAsync(payload),
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        accountStatus: user.accountStatus,
-      },
     };
   }
 

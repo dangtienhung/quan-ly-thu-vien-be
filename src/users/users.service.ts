@@ -24,14 +24,6 @@ export class UsersService {
 
   // CREATE - Tạo user mới
   async create(createUserDto: CreateUserDto): Promise<User> {
-    // Check if username already exists
-    const existingUsername = await this.userRepository.findOne({
-      where: { username: createUserDto.username },
-    });
-    if (existingUsername) {
-      throw new ConflictException('Username already exists');
-    }
-
     // Check if email already exists
     const existingEmail = await this.userRepository.findOne({
       where: { email: createUserDto.email },

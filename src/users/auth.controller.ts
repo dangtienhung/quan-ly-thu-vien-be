@@ -23,6 +23,16 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Đăng nhập thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        access_token: {
+          type: 'string',
+          description: 'JWT token chứa id người dùng',
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 401,
