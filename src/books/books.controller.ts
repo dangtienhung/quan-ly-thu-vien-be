@@ -28,9 +28,21 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { BooksService } from './books.service';
+import { BookWithAuthorsDto } from './dto/book-with-authors.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
+
+// Interface cho Book với authors
+interface BookWithAuthors extends Omit<Book, 'authors'> {
+  authors: Array<{
+    id: string;
+    author_name: string;
+    slug: string;
+    bio?: string;
+    nationality?: string;
+  }>;
+}
 
 @ApiTags('Books')
 @ApiBearerAuth()
@@ -73,12 +85,12 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
     isArray: true,
   })
   findAll(
     @Query() paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<Book>> {
+  ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     return this.booksService.findAll(paginationQuery);
   }
 
@@ -100,13 +112,13 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Tìm kiếm sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
     isArray: true,
   })
   search(
     @Query('q') query: string,
     @Query() paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<Book>> {
+  ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     return this.booksService.search(query, paginationQuery);
   }
 
@@ -116,10 +128,10 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Lấy thông tin sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy sách.' })
-  findByIsbn(@Param('isbn') isbn: string): Promise<Book> {
+  findByIsbn(@Param('isbn') isbn: string): Promise<BookWithAuthors> {
     return this.booksService.findByIsbn(isbn);
   }
 
@@ -129,10 +141,10 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Lấy thông tin sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy sách.' })
-  findOne(@Param('id') id: string): Promise<Book> {
+  findOne(@Param('id') id: string): Promise<BookWithAuthors> {
     return this.booksService.findOne(id);
   }
 
@@ -142,10 +154,10 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Lấy thông tin sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy sách.' })
-  findBySlug(@Param('slug') slug: string): Promise<Book> {
+  findBySlug(@Param('slug') slug: string): Promise<BookWithAuthors> {
     return this.booksService.findBySlug(slug);
   }
 
@@ -156,7 +168,7 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Cập nhật sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
@@ -164,7 +176,7 @@ export class BooksController {
   update(
     @Param('id') id: string,
     @Body() updateBookDto: UpdateBookDto,
-  ): Promise<Book> {
+  ): Promise<BookWithAuthors> {
     return this.booksService.update(id, updateBookDto);
   }
 
@@ -175,7 +187,7 @@ export class BooksController {
   @ApiResponse({
     status: 200,
     description: 'Cập nhật sách thành công.',
-    type: Book,
+    type: BookWithAuthorsDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
@@ -183,7 +195,7 @@ export class BooksController {
   updateBySlug(
     @Param('slug') slug: string,
     @Body() updateBookDto: UpdateBookDto,
-  ): Promise<Book> {
+  ): Promise<BookWithAuthors> {
     return this.booksService.updateBySlug(slug, updateBookDto);
   }
 

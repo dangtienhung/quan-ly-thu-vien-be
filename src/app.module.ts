@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthorsModule } from './authors/authors.module';
-import { BookAuthorsModule } from './book-authors/book-authors.module';
 import { BooksModule } from './books/books.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonModule } from './common/common.module';
@@ -18,6 +17,7 @@ import { ReaderTypesModule } from './reader-types/reader-types.module';
 import { ReadersModule } from './readers/readers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
+import { BookAuthorsModule } from './book-authors/book-authors.module';
 
 @Module({
   imports: [
@@ -50,7 +50,7 @@ import { UsersModule } from './users/users.module';
     BooksModule,
     PhysicalCopyModule,
     EbooksModule,
-    BookAuthorsModule, // Thêm BooksModule vào đây
+    BookAuthorsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -50,6 +50,15 @@ export class Author {
   nationality: string;
 
   @ApiProperty({
+    description:
+      'Danh sách các sách của tác giả (được quản lý qua BookAuthors)',
+    type: 'array',
+    items: { type: 'string' },
+    example: ['550e8400-e29b-41d4-a716-446655440000'],
+  })
+  books?: string[];
+
+  @ApiProperty({
     description: 'Ngày tạo',
     example: '2024-01-01T00:00:00.000Z',
   })

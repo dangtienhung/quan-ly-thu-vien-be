@@ -30,7 +30,57 @@ POST /publishers
 - **Lỗi**:
   - 400: Dữ liệu không hợp lệ
 
-### 2. Lấy Danh Sách Nhà Xuất Bản
+### 2. Tạo Nhiều Nhà Xuất Bản Cùng Lúc
+```http
+POST /publishers/bulk
+```
+- **Mô tả**: Tạo nhiều nhà xuất bản cùng lúc (tối đa 50 nhà xuất bản)
+- **Body**: CreateManyPublishersDto
+- **Response**: 201 - Kết quả tạo với thông tin chi tiết
+  ```json
+  {
+    "success": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "publisherName": "NXB Kim Đồng",
+        "slug": "nxb-kim-dong",
+        "address": "55 Quang Trung, Hai Bà Trưng, Hà Nội",
+        "phone": "024-3821-4789",
+        "email": "info@nxbkimdong.com.vn",
+        "website": "https://nxbkimdong.com.vn",
+        "description": "Nhà xuất bản chuyên về sách thiếu nhi",
+        "country": "Việt Nam",
+        "establishedDate": "1957-06-17",
+        "isActive": true,
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "errors": [
+      {
+        "index": 1,
+        "publisherName": "NXB Trẻ",
+        "error": "Tên nhà xuất bản 'NXB Trẻ' đã tồn tại trong hệ thống"
+      }
+    ],
+    "summary": {
+      "total": 3,
+      "success": 2,
+      "failed": 1
+    }
+  }
+  ```
+- **Lỗi**:
+  - 400: Dữ liệu không hợp lệ hoặc có tên trùng lặp
+- **Tính năng**:
+  - ✅ Validation từng nhà xuất bản trong danh sách
+  - ✅ Kiểm tra trùng lặp tên trong danh sách đầu vào
+  - ✅ Kiểm tra tên đã tồn tại trong database
+  - ✅ Xử lý lỗi chi tiết cho từng item
+  - ✅ Báo cáo tổng kết kết quả
+  - ✅ Giới hạn tối đa 50 nhà xuất bản mỗi lần
+
+### 3. Lấy Danh Sách Nhà Xuất Bản
 ```http
 GET /publishers
 ```
@@ -40,7 +90,7 @@ GET /publishers
   - limit: Số lượng mỗi trang (mặc định: 10)
 - **Response**: 200 - Danh sách nhà xuất bản và thông tin phân trang
 
-### 3. Tìm Kiếm Nhà Xuất Bản
+### 4. Tìm Kiếm Nhà Xuất Bản
 ```http
 GET /publishers/search
 ```
@@ -51,7 +101,7 @@ GET /publishers/search
   - limit: Số lượng mỗi trang (mặc định: 10)
 - **Response**: 200 - Kết quả tìm kiếm có phân trang
 
-### 4. Lấy Danh Sách Theo Trạng Thái
+### 5. Lấy Danh Sách Theo Trạng Thái
 ```http
 GET /publishers/status/:isActive
 ```
@@ -61,7 +111,7 @@ GET /publishers/status/:isActive
 - **Query Parameters**: Hỗ trợ phân trang
 - **Response**: 200 - Danh sách nhà xuất bản theo trạng thái
 
-### 5. Lấy Danh Sách Theo Quốc Gia
+### 6. Lấy Danh Sách Theo Quốc Gia
 ```http
 GET /publishers/country/:country
 ```
@@ -71,7 +121,7 @@ GET /publishers/country/:country
 - **Query Parameters**: Hỗ trợ phân trang
 - **Response**: 200 - Danh sách nhà xuất bản theo quốc gia
 
-### 6. Lấy Thống Kê Nhà Xuất Bản
+### 7. Lấy Thống Kê Nhà Xuất Bản
 ```http
 GET /publishers/stats
 ```
@@ -89,7 +139,7 @@ GET /publishers/stats
   }
   ```
 
-### 7. Lấy Thông Tin Nhà Xuất Bản
+### 8. Lấy Thông Tin Nhà Xuất Bản
 ```http
 GET /publishers/:id
 GET /publishers/slug/:slug
@@ -98,7 +148,7 @@ GET /publishers/slug/:slug
 - **Response**: 200 - Thông tin chi tiết nhà xuất bản
 - **Lỗi**: 404 - Không tìm thấy nhà xuất bản
 
-### 8. Cập Nhật Thông Tin Nhà Xuất Bản
+### 9. Cập Nhật Thông Tin Nhà Xuất Bản
 ```http
 PATCH /publishers/:id
 PATCH /publishers/slug/:slug
@@ -110,7 +160,7 @@ PATCH /publishers/slug/:slug
   - 404: Không tìm thấy nhà xuất bản
   - 400: Dữ liệu không hợp lệ
 
-### 9. Chuyển Đổi Trạng Thái
+### 10. Chuyển Đổi Trạng Thái
 ```http
 PATCH /publishers/:id/toggle-status
 ```
@@ -118,7 +168,7 @@ PATCH /publishers/:id/toggle-status
 - **Response**: 200 - Thông tin nhà xuất bản sau khi cập nhật
 - **Lỗi**: 404 - Không tìm thấy nhà xuất bản
 
-### 10. Xóa Nhà Xuất Bản
+### 11. Xóa Nhà Xuất Bản
 ```http
 DELETE /publishers/:id
 DELETE /publishers/slug/:slug
@@ -140,6 +190,12 @@ DELETE /publishers/slug/:slug
 - **establishedDate**: Tùy chọn, định dạng YYYY-MM-DD
 - **country**: Tùy chọn, chuỗi, tối đa 100 ký tự
 
+### CreateManyPublishersDto
+- **publishers**: Bắt buộc, mảng CreatePublisherDto
+- **ArrayMinSize**: Tối thiểu 1 nhà xuất bản
+- **ArrayMaxSize**: Tối đa 50 nhà xuất bản
+- **ValidateNested**: Validation từng item trong mảng
+
 ### UpdatePublisherDto
 - Tất cả trường là không bắt buộc
 - Các quy tắc validation giống CreatePublisherDto
@@ -151,15 +207,22 @@ DELETE /publishers/slug/:slug
    - Slug tự động tạo từ tên nhà xuất bản
    - Mặc định trạng thái active khi tạo mới
 
-2. **Quản Lý Trạng Thái**
+2. **Tạo Nhiều Nhà Xuất Bản**
+   - Kiểm tra trùng lặp tên trong danh sách đầu vào
+   - Kiểm tra tên đã tồn tại trong database
+   - Xử lý từng item riêng biệt, không dừng khi gặp lỗi
+   - Báo cáo chi tiết kết quả thành công và thất bại
+   - Giới hạn tối đa 50 nhà xuất bản mỗi lần
+
+3. **Quản Lý Trạng Thái**
    - Nhà xuất bản inactive không thể được gán cho sách mới
    - Có thể chuyển đổi trạng thái bất kỳ lúc nào
 
-3. **Xóa Nhà Xuất Bản**
+4. **Xóa Nhà Xuất Bản**
    - Chỉ có thể xóa nhà xuất bản không có sách liên quan
    - Xóa vĩnh viễn khỏi hệ thống
 
-4. **Slug Generation**
+5. **Slug Generation**
    - Tự động tạo slug từ tên nhà xuất bản
    - Slug phải là duy nhất trong hệ thống
    - Hỗ trợ tiếng Việt có dấu
@@ -170,6 +233,7 @@ DELETE /publishers/slug/:slug
 - Thống kê nhà xuất bản theo quốc gia
 - Theo dõi hoạt động tạo/sửa/xóa nhà xuất bản
 - Monitoring hiệu suất tìm kiếm
+- Theo dõi hiệu suất bulk operations
 
 ## 🔍 Tính năng Tìm kiếm
 
@@ -197,6 +261,7 @@ DELETE /publishers/slug/:slug
 - Sử dụng pagination cho tất cả danh sách
 - Cache thống kê để giảm tải database
 - Optimize query với proper indexing
+- Bulk operations cho việc tạo nhiều nhà xuất bản
 
 ## 📈 Tương lai
 
@@ -205,6 +270,7 @@ DELETE /publishers/slug/:slug
 - Theo dõi lịch sử giao dịch
 - Đánh giá và xếp hạng nhà xuất bản
 - Tích hợp API của nhà xuất bản
+- Bulk update và bulk delete operations
 
 ### Tích hợp
 - Kết nối với module Books

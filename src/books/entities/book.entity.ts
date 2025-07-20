@@ -5,15 +5,12 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
-import { Author } from '../../authors/entities/author.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { Publisher } from '../../publishers/entities/publisher.entity';
 import slug from 'slug';
@@ -151,16 +148,12 @@ export class Book {
   category: Category;
 
   @ApiProperty({
-    description: 'Danh sách các tác giả',
-    type: [Author],
+    description: 'Danh sách các tác giả (được quản lý qua BookAuthors)',
+    type: 'array',
+    items: { type: 'string' },
+    example: ['550e8400-e29b-41d4-a716-446655440000'],
   })
-  @ManyToMany(() => Author)
-  @JoinTable({
-    name: 'book_authors',
-    joinColumn: { name: 'book_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'author_id', referencedColumnName: 'id' },
-  })
-  authors: Author[];
+  authors?: string[];
 
   @ApiProperty({
     description: 'Ngày tạo',

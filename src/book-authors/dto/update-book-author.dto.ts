@@ -1,9 +1,4 @@
-import { IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
+import { CreateBookAuthorDto } from './create-book-author.dto';
 
-export class UpdateBookAuthorDto {
-  @IsOptional()
-  book_id?: string;
-
-  @IsOptional()
-  author_id?: string;
-}
+export class UpdateBookAuthorDto extends PartialType(CreateBookAuthorDto) {}

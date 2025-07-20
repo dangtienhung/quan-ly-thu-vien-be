@@ -1,12 +1,15 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EBook } from 'src/ebooks/entities/ebook.entity';
 import { Repository } from 'typeorm';
 import { AuthorsService } from '../authors/authors.service';
+import { BookAuthorsService } from '../book-authors/book-authors.service';
 import { CategoriesService } from '../categories/categories.service';
 import {
   PaginatedResponseDto,
@@ -20,6 +23,17 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book, BookType } from './entities/book.entity';
 
+// Interface cho Book với authors
+interface BookWithAuthors extends Omit<Book, 'authors'> {
+  authors: Array<{
+    id: string;
+    author_name: string;
+    slug: string;
+    bio?: string;
+    nationality?: string;
+  }>;
+}
+
 @Injectable()
 export class BooksService {
   constructor(
@@ -30,6 +44,8 @@ export class BooksService {
     @InjectRepository(EBook)
     private readonly ebookRepository: Repository<EBook>,
     private readonly authorsService: AuthorsService,
+    @Inject(forwardRef(() => BookAuthorsService))
+    private readonly bookAuthorsService: BookAuthorsService,
     private readonly categoriesService: CategoriesService,
     private readonly publishersService: PublishersService,
   ) {}
@@ -59,34 +75,61 @@ export class BooksService {
     const book = this.bookRepository.create(createBookDto);
     const savedBook = await this.bookRepository.save(book);
 
-    // Thêm quan hệ với tác giả
-    savedBook.authors = await Promise.all(
-      createBookDto.author_ids.map((id) => this.authorsService.findOne(id)),
-    );
+    // Tạo mối quan hệ với tác giả thông qua BookAuthors
+    if (createBookDto.author_ids && createBookDto.author_ids.length > 0) {
+      const bookAuthorDtos = createBookDto.author_ids.map((authorId) => ({
+        book_id: savedBook.id,
+        author_id: authorId,
+      }));
+      await this.bookAuthorsService.createMany(bookAuthorDtos);
+    }
 
-    return await this.bookRepository.save(savedBook);
+    return savedBook;
   }
 
   // Lấy danh sách có phân trang
   async findAll(
     paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<Book>> {
+  ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     const { page = 1, limit = 10 } = paginationQuery;
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.bookRepository.findAndCount({
-      relations: ['category', 'publisher', 'authors'],
+      relations: ['category', 'publisher'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
     });
+
+    // Lấy thông tin tác giả cho từng sách
+    const booksWithAuthors = await Promise.all(
+      data.map(async (book) => {
+        const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+          book.id,
+          { page: 1, limit: 100 },
+        );
+
+        const authors = bookAuthorsResponse.data.map((ba) => ({
+          id: ba.author.id,
+          author_name: ba.author.author_name,
+          slug: ba.author.slug,
+          bio: ba.author.bio,
+          nationality: ba.author.nationality,
+        }));
+
+        return {
+          ...book,
+          authors,
+        } as BookWithAuthors;
+      }),
+    );
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
     return {
-      data,
+      data: booksWithAuthors,
       meta: {
         page,
         limit,
@@ -102,7 +145,7 @@ export class BooksService {
   async search(
     query: string,
     paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<Book>> {
+  ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     const { page = 1, limit = 10 } = paginationQuery;
     const skip = (page - 1) * limit;
 
@@ -110,7 +153,6 @@ export class BooksService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.category', 'category')
       .leftJoinAndSelect('book.publisher', 'publisher')
-      .leftJoinAndSelect('book.authors', 'authors')
       .where(
         'book.title ILIKE :query OR book.description ILIKE :query OR book.isbn ILIKE :query',
         { query: `%${query}%` },
@@ -120,12 +162,35 @@ export class BooksService {
       .take(limit)
       .getManyAndCount();
 
+    // Lấy thông tin tác giả cho từng sách
+    const booksWithAuthors = await Promise.all(
+      data.map(async (book) => {
+        const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+          book.id,
+          { page: 1, limit: 100 },
+        );
+
+        const authors = bookAuthorsResponse.data.map((ba) => ({
+          id: ba.author.id,
+          author_name: ba.author.author_name,
+          slug: ba.author.slug,
+          bio: ba.author.bio,
+          nationality: ba.author.nationality,
+        }));
+
+        return {
+          ...book,
+          authors,
+        } as BookWithAuthors;
+      }),
+    );
+
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
     return {
-      data,
+      data: booksWithAuthors,
       meta: {
         page,
         limit,
@@ -138,44 +203,107 @@ export class BooksService {
   }
 
   // Tìm theo ID
-  async findOne(id: string): Promise<Book> {
+  async findOne(id: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { id },
-      relations: ['category', 'publisher', 'authors'],
+      relations: ['category', 'publisher'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
     }
-    return book;
+
+    // Lấy thông tin tác giả
+    const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+      book.id,
+      { page: 1, limit: 100 },
+    );
+
+    const authors = bookAuthorsResponse.data.map((ba) => ({
+      id: ba.author.id,
+      author_name: ba.author.author_name,
+      slug: ba.author.slug,
+      bio: ba.author.bio,
+      nationality: ba.author.nationality,
+    }));
+
+    return {
+      ...book,
+      authors,
+    } as BookWithAuthors;
   }
 
   // Tìm theo slug
-  async findBySlug(slug: string): Promise<Book> {
+  async findBySlug(slug: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { slug },
-      relations: ['category', 'publisher', 'authors'],
+      relations: ['category', 'publisher'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với slug '${slug}'`);
     }
-    return book;
+
+    // Lấy thông tin tác giả
+    const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+      book.id,
+      { page: 1, limit: 100 },
+    );
+
+    const authors = bookAuthorsResponse.data.map((ba) => ({
+      id: ba.author.id,
+      author_name: ba.author.author_name,
+      slug: ba.author.slug,
+      bio: ba.author.bio,
+      nationality: ba.author.nationality,
+    }));
+
+    return {
+      ...book,
+      authors,
+    } as BookWithAuthors;
   }
 
   // Tìm theo ISBN
-  async findByIsbn(isbn: string): Promise<Book> {
+  async findByIsbn(isbn: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { isbn },
-      relations: ['category', 'publisher', 'authors'],
+      relations: ['category', 'publisher'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ISBN ${isbn}`);
     }
-    return book;
+
+    // Lấy thông tin tác giả
+    const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+      book.id,
+      { page: 1, limit: 100 },
+    );
+
+    const authors = bookAuthorsResponse.data.map((ba) => ({
+      id: ba.author.id,
+      author_name: ba.author.author_name,
+      slug: ba.author.slug,
+      bio: ba.author.bio,
+      nationality: ba.author.nationality,
+    }));
+
+    return {
+      ...book,
+      authors,
+    } as BookWithAuthors;
   }
 
   // Cập nhật theo ID
-  async update(id: string, updateBookDto: UpdateBookDto): Promise<Book> {
-    const book = await this.findOne(id);
+  async update(
+    id: string,
+    updateBookDto: UpdateBookDto,
+  ): Promise<BookWithAuthors> {
+    const book = await this.bookRepository.findOne({
+      where: { id },
+      relations: ['category', 'publisher'],
+    });
+    if (!book) {
+      throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
+    }
 
     // Kiểm tra thể loại nếu được cập nhật
     if (updateBookDto.category_id) {
@@ -187,39 +315,80 @@ export class BooksService {
       await this.publishersService.findOne(updateBookDto.publisher_id);
     }
 
-    // Kiểm tra các tác giả nếu được cập nhật
+    // Cập nhật mối quan hệ với tác giả nếu được cập nhật
     if (updateBookDto.author_ids) {
+      // Kiểm tra các tác giả tồn tại
       await Promise.all(
         updateBookDto.author_ids.map((id) => this.authorsService.findOne(id)),
       );
-      book.authors = await Promise.all(
-        updateBookDto.author_ids.map((id) => this.authorsService.findOne(id)),
-      );
+
+      // Xóa tất cả mối quan hệ cũ
+      await this.bookAuthorsService.removeByBookId(id);
+
+      // Tạo mối quan hệ mới
+      if (updateBookDto.author_ids.length > 0) {
+        const bookAuthorDtos = updateBookDto.author_ids.map((authorId) => ({
+          book_id: id,
+          author_id: authorId,
+        }));
+        await this.bookAuthorsService.createMany(bookAuthorDtos);
+      }
     }
 
     // Cập nhật thông tin sách
     Object.assign(book, updateBookDto);
-    return await this.bookRepository.save(book);
+    const updatedBook = await this.bookRepository.save(book);
+
+    // Lấy thông tin tác giả
+    const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+      updatedBook.id,
+      { page: 1, limit: 100 },
+    );
+
+    const authors = bookAuthorsResponse.data.map((ba) => ({
+      id: ba.author.id,
+      author_name: ba.author.author_name,
+      slug: ba.author.slug,
+      bio: ba.author.bio,
+      nationality: ba.author.nationality,
+    }));
+
+    return {
+      ...updatedBook,
+      authors,
+    } as BookWithAuthors;
   }
 
   // Cập nhật theo slug
   async updateBySlug(
     slug: string,
     updateBookDto: UpdateBookDto,
-  ): Promise<Book> {
+  ): Promise<BookWithAuthors> {
     const book = await this.findBySlug(slug);
     return await this.update(book.id, updateBookDto);
   }
 
   // Xóa theo ID
   async remove(id: string): Promise<void> {
-    const book = await this.findOne(id);
+    const book = await this.bookRepository.findOne({
+      where: { id },
+      relations: ['category', 'publisher'],
+    });
+    if (!book) {
+      throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
+    }
     await this.bookRepository.remove(book);
   }
 
   // Xóa theo slug
   async removeBySlug(slug: string): Promise<void> {
-    const book = await this.findBySlug(slug);
+    const book = await this.bookRepository.findOne({
+      where: { slug },
+      relations: ['category', 'publisher'],
+    });
+    if (!book) {
+      throw new NotFoundException(`Không tìm thấy sách với slug '${slug}'`);
+    }
     await this.bookRepository.remove(book);
   }
 

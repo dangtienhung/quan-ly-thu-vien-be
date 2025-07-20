@@ -27,6 +27,7 @@ import {
 } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
@@ -57,6 +58,85 @@ export class PublishersController {
     @Body() createPublisherDto: CreatePublisherDto,
   ): Promise<Publisher> {
     return this.publishersService.create(createPublisherDto);
+  }
+
+  @Post('bulk')
+  @ApiOperation({ summary: 'Tạo nhiều nhà xuất bản cùng lúc' })
+  @ApiBody({
+    type: CreateManyPublishersDto,
+    description: 'Danh sách nhà xuất bản cần tạo',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo nhà xuất bản thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Publisher' },
+          description: 'Danh sách nhà xuất bản đã tạo thành công',
+        },
+        errors: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              index: {
+                type: 'number',
+                description: 'Vị trí trong danh sách đầu vào',
+              },
+              publisherName: {
+                type: 'string',
+                description: 'Tên nhà xuất bản lỗi',
+              },
+              error: { type: 'string', description: 'Mô tả lỗi' },
+            },
+          },
+          description: 'Danh sách lỗi nếu có',
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            total: {
+              type: 'number',
+              description: 'Tổng số nhà xuất bản cần tạo',
+            },
+            success: {
+              type: 'number',
+              description: 'Số nhà xuất bản tạo thành công',
+            },
+            failed: {
+              type: 'number',
+              description: 'Số nhà xuất bản tạo thất bại',
+            },
+          },
+          description: 'Tóm tắt kết quả',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dữ liệu đầu vào không hợp lệ hoặc có tên trùng lặp.',
+  })
+  @HttpCode(HttpStatus.CREATED)
+  async createMany(
+    @Body() createManyPublishersDto: CreateManyPublishersDto,
+  ): Promise<{
+    success: Publisher[];
+    errors: Array<{
+      index: number;
+      publisherName: string;
+      error: string;
+    }>;
+    summary: {
+      total: number;
+      success: number;
+      failed: number;
+    };
+  }> {
+    return this.publishersService.createMany(createManyPublishersDto);
   }
 
   @Get()

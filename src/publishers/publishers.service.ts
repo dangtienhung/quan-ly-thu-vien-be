@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import slug from 'slug';
 import { IsNull, Repository } from 'typeorm';
@@ -7,6 +11,7 @@ import {
   PaginationMetaDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
+import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
@@ -22,6 +27,86 @@ export class PublishersService {
   async create(createPublisherDto: CreatePublisherDto): Promise<Publisher> {
     const publisher = this.publisherRepository.create(createPublisherDto);
     return await this.publisherRepository.save(publisher);
+  }
+
+  // Tạo nhiều nhà xuất bản cùng lúc
+  async createMany(createManyPublishersDto: CreateManyPublishersDto): Promise<{
+    success: Publisher[];
+    errors: Array<{
+      index: number;
+      publisherName: string;
+      error: string;
+    }>;
+    summary: {
+      total: number;
+      success: number;
+      failed: number;
+    };
+  }> {
+    const { publishers } = createManyPublishersDto;
+    const success: Publisher[] = [];
+    const errors: Array<{
+      index: number;
+      publisherName: string;
+      error: string;
+    }> = [];
+
+    // Kiểm tra trùng lặp tên nhà xuất bản trong danh sách đầu vào
+    const publisherNames = publishers.map((p) => p.publisherName);
+    const duplicateNames = publisherNames.filter(
+      (name, index) => publisherNames.indexOf(name) !== index,
+    );
+
+    if (duplicateNames.length > 0) {
+      throw new BadRequestException(
+        `Có tên nhà xuất bản trùng lặp trong danh sách: ${duplicateNames.join(', ')}`,
+      );
+    }
+
+    // Kiểm tra tên nhà xuất bản đã tồn tại trong database
+    const existingPublishers = await this.publisherRepository.find({
+      where: publisherNames.map((name) => ({ publisherName: name })),
+    });
+
+    const existingNames = existingPublishers.map((p) => p.publisherName);
+
+    // Xử lý từng nhà xuất bản
+    for (let i = 0; i < publishers.length; i++) {
+      const publisherData = publishers[i];
+
+      try {
+        // Kiểm tra tên đã tồn tại
+        if (existingNames.includes(publisherData.publisherName)) {
+          errors.push({
+            index: i,
+            publisherName: publisherData.publisherName,
+            error: `Tên nhà xuất bản '${publisherData.publisherName}' đã tồn tại trong hệ thống`,
+          });
+          continue;
+        }
+
+        // Tạo nhà xuất bản mới
+        const publisher = this.publisherRepository.create(publisherData);
+        const savedPublisher = await this.publisherRepository.save(publisher);
+        success.push(savedPublisher);
+      } catch (error) {
+        errors.push({
+          index: i,
+          publisherName: publisherData.publisherName,
+          error: error.message || 'Lỗi không xác định khi tạo nhà xuất bản',
+        });
+      }
+    }
+
+    return {
+      success,
+      errors,
+      summary: {
+        total: publishers.length,
+        success: success.length,
+        failed: errors.length,
+      },
+    };
   }
 
   // Lấy tất cả nhà xuất bản với phân trang
