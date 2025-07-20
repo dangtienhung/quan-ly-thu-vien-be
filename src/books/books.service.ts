@@ -305,4 +305,10 @@ export class BooksService {
     }
     await this.physicalCopyRepository.remove(copy);
   }
+
+  // Ebook Methods
+  async createMany(createBookDtos: CreateBookDto[]): Promise<Book[]> {
+    const books = this.bookRepository.create(createBookDtos);
+    return await this.bookRepository.save(books);
+  }
 }

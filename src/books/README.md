@@ -107,6 +107,48 @@ DELETE /books/:id
 ### 10. Xóa Sách Theo Slug
 ```http
 DELETE /books/slug/:slug
+
+### 11. Tạo Nhiều Sách
+```http
+POST /books/bulk
+```
+- **Mô tả**: Tạo nhiều sách cùng lúc trong hệ thống.
+- **Role**: Admin
+- **Body**:
+  ```json
+  [
+    {
+      "title": "Tên sách 1",
+      "isbn": "1234567890",
+      "publish_year": 2024,
+      "edition": "1st",
+      "description": "Mô tả sách 1",
+      "cover_image": "url_to_image_1",
+      "language": "Tiếng Việt",
+      "page_count": 300,
+      "book_type": "physical",
+      "physical_type": "borrowable",
+      "publisher_id": "uuid_of_publisher_1",
+      "category_id": "uuid_of_category_1"
+    },
+    {
+      "title": "Tên sách 2",
+      "isbn": "0987654321",
+      "publish_year": 2024,
+      "edition": "1st",
+      "description": "Mô tả sách 2",
+      "cover_image": "url_to_image_2",
+      "language": "Tiếng Việt",
+      "page_count": 250,
+      "book_type": "physical",
+      "physical_type": "borrowable",
+      "publisher_id": "uuid_of_publisher_2",
+      "category_id": "uuid_of_category_2"
+    }
+  ]
+  ```
+- **Response**: 201 - Danh sách thông tin sách đã tạo.
+
 ```
 - **Role**: Admin
 - **Response**: 204 - Xóa thành công.

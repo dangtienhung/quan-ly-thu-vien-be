@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -208,5 +209,54 @@ export class BooksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeBySlug(@Param('slug') slug: string): Promise<void> {
     return this.booksService.removeBySlug(slug);
+  }
+
+  @Post('bulk')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Tạo nhiều sách (Admin)' })
+  @ApiBody({
+    type: [CreateBookDto],
+    description: 'Danh sách sách cần tạo',
+    examples: {
+      example1: {
+        summary: 'Ví dụ tạo nhiều sách',
+        value: [
+          {
+            title: 'Tên sách 1',
+            isbn: '1234567890',
+            publish_year: 2024,
+            edition: '1st',
+            description: 'Mô tả sách 1',
+            cover_image: 'https://example.com/image1.jpg',
+            language: 'Tiếng Việt',
+            page_count: 300,
+            book_type: 'physical',
+            physical_type: 'borrowable',
+            publisher_id: '550e8400-e29b-41d4-a716-446655440000',
+            category_id: '550e8400-e29b-41d4-a716-446655440001',
+          },
+          {
+            title: 'Tên sách 2',
+            isbn: '0987654321',
+            publish_year: 2024,
+            edition: '1st',
+            description: 'Mô tả sách 2',
+            cover_image: 'https://example.com/image2.jpg',
+            language: 'Tiếng Việt',
+            page_count: 250,
+            book_type: 'physical',
+            physical_type: 'borrowable',
+            publisher_id: '550e8400-e29b-41d4-a716-446655440002',
+            category_id: '550e8400-e29b-41d4-a716-446655440003',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.CREATED)
+  createMany(@Body() createBookDtos: CreateBookDto[]): Promise<Book[]> {
+    return this.booksService.createMany(createBookDtos);
   }
 }
