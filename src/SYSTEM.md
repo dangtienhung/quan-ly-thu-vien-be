@@ -42,6 +42,7 @@ Books → EBooks
 ```
 - **Books**: Thông tin sách cơ bản
 - **Authors**: Quản lý tác giả
+- **BookAuthors: Quản lý tác giá và sách
 - **Categories**: Phân loại sách
 - **Publishers**: Nhà xuất bản
 - **PhysicalCopies**: Bản sao vật lý
@@ -134,6 +135,22 @@ interface Author {
   nationality: string;
 }
 ```
+
+#### **BookAuthors Table**
+```typescript
+interface BookAuthor {
+  id: uuid;                     // ID duy nhất của bản ghi
+  book_id: uuid;                // Liên kết đến sách
+  author_id: uuid;              // Liên kết đến tác giả
+}
+```
+
+- **Mô tả**: Bảng này lưu trữ mối quan hệ giữa sách và tác giả, cho phép một sách có nhiều tác giả và một tác giả có thể viết nhiều sách.
+- **Khóa ngoại**:
+  - `book_id`: Liên kết đến bảng `Books`.
+  - `author_id`: Liên kết đến bảng `Authors`.
+- **Quy tắc**: Mỗi bản ghi trong bảng này đại diện cho một mối quan hệ giữa một sách và một tác giả.
+
 
 #### **Categories Table**
 ```typescript
