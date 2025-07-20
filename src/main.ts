@@ -46,6 +46,9 @@ async function bootstrap() {
     .addTag('Publishers', 'Quản lý nhà xuất bản')
     .addTag('Authors', 'Quản lý tác giả')
     .addTag('Products', 'Quản lý sản phẩm')
+    .addTag('Ebooks', 'Quản lý ebook')
+    .addTag('Physical Copies', 'Quản lý bản in')
+    .addTag('Books', 'Quản lý sách')
     .addBearerAuth() // Thêm authentication nếu cần
     .build();
 

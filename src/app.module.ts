@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthorsModule } from './authors/authors.module';
+import { BooksModule } from './books/books.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonModule } from './common/common.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -14,6 +15,8 @@ import { ReaderTypesModule } from './reader-types/reader-types.module';
 import { ReadersModule } from './readers/readers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
+import { PhysicalCopyModule } from './physical-copy/physical-copy.module';
+import { EbooksModule } from './ebooks/ebooks.module';
 
 @Module({
   imports: [
@@ -42,7 +45,10 @@ import { UsersModule } from './users/users.module';
     ReaderTypesModule,
     ReadersModule,
     PublishersModule,
-    AuthorsModule, // Thêm AuthorsModule vào đây
+    AuthorsModule,
+    BooksModule,
+    PhysicalCopyModule,
+    EbooksModule, // Thêm BooksModule vào đây
   ],
   controllers: [AppController],
   providers: [
