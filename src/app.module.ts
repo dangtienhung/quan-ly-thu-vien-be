@@ -18,6 +18,10 @@ import { ReadersModule } from './readers/readers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { BookAuthorsModule } from './book-authors/book-authors.module';
+import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
+import { RenewalsModule } from './renewals/renewals.module';
+import { FinesModule } from './fines/fines.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
   imports: [
@@ -51,6 +55,10 @@ import { BookAuthorsModule } from './book-authors/book-authors.module';
     PhysicalCopyModule,
     EbooksModule,
     BookAuthorsModule,
+    BorrowRecordsModule,
+    RenewalsModule,
+    FinesModule,
+    ReservationsModule,
   ],
   controllers: [AppController],
   providers: [
