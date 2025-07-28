@@ -32,7 +32,7 @@ import { UpdateEBookDto } from './dto/update-ebook.dto';
 import { EbooksService } from './ebooks.service';
 import { EBook } from './entities/ebook.entity';
 
-@ApiTags('Ebooks - Quản lý Sách Điện tử')
+@ApiTags('Ebooks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('ebooks')

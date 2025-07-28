@@ -37,7 +37,7 @@ import {
 } from './entities/physical-copy.entity';
 import { PhysicalCopyService } from './physical-copy.service';
 
-@ApiTags('Physical Copies - Quản lý Bản sao Vật lý')
+@ApiTags('Physical Copies')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('physical-copies')

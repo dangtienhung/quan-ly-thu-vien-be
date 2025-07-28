@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateUserDto } from './dto/create-user.dto';
+import { FilterUsersDto } from './dto/filter-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -60,6 +62,23 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  // READ ME - Lấy thông tin người dùng hiện tại
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Lấy thông tin người dùng đang đăng nhập' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin người dùng thành công.',
+    type: User,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Chưa đăng nhập hoặc token hết hạn.',
+  })
+  async getCurrentUser(@Request() req): Promise<User> {
+    return this.usersService.findOne(req.user.id);
+  }
+
   // READ ALL - Danh sách users
   @Get()
   @Roles('admin')
@@ -76,15 +95,21 @@ export class UsersController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: UserRole,
+    description: 'Lọc theo loại người dùng (reader hoặc admin)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách người dùng thành công.',
   })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async findAll(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() filterQuery: FilterUsersDto,
   ): Promise<PaginatedResponseDto<User>> {
-    return this.usersService.findAll(paginationQuery);
+    return this.usersService.findAll(filterQuery);
   }
 
   // SEARCH - Tìm kiếm users

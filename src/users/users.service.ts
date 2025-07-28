@@ -12,6 +12,7 @@ import {
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { FilterUsersDto } from './dto/filter-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
 
@@ -45,17 +46,24 @@ export class UsersService {
 
   // READ ALL - Danh sách users với pagination
   async findAll(
-    paginationQuery: PaginationQueryDto,
+    filterQuery: FilterUsersDto,
   ): Promise<PaginatedResponseDto<User>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, type } = filterQuery;
     const skip = (page - 1) * limit;
 
-    const [data, totalItems] = await this.userRepository.findAndCount({
-      // relations: ['reader'], // TODO: Uncomment when Reader entity relationships are stable
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Tạo query builder để hỗ trợ lọc theo type
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // Thêm điều kiện lọc theo type nếu có
+    if (type) {
+      queryBuilder.where('user.role = :role', { role: type });
+    }
+
+    const [data, totalItems] = await queryBuilder
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;

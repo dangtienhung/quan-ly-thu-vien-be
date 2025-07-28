@@ -11,6 +11,7 @@ Hệ thống xác thực được xây dựng với JWT (JSON Web Token) và Pas
 - ✅ Bảo vệ API endpoints với JWT Guard
 - ✅ Thông báo lỗi song ngữ Việt-Anh
 - ✅ Tài liệu Swagger đầy đủ
+- ✅ Lọc danh sách users theo loại (reader/admin)
 
 ## 🛠️ Cấu hình
 
@@ -45,13 +46,76 @@ POST /api/auth/login
     "id": "uuid",
     "username": "string",
     "email": "string",
-    "role": "admin | user",
-    "accountStatus": "active | inactive | banned"
+    "role": "admin | reader",
+    "accountStatus": "active | suspended | banned"
   }
 }
 ```
 
-### 2. Đổi mật khẩu
+### 2. Lấy thông tin người dùng hiện tại
+```http
+GET /api/users/me
+```
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "username": "string",
+  "email": "string",
+  "role": "reader",
+  "accountStatus": "active",
+  "lastLogin": "2024-01-01T10:30:00.000Z",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 3. Lấy danh sách người dùng (Admin)
+```http
+GET /api/users?page=1&limit=10&type=reader
+```
+
+**Query Parameters:**
+- `page` (optional): Số trang (mặc định: 1)
+- `limit` (optional): Số lượng mỗi trang (mặc định: 10)
+- `type` (optional): Lọc theo loại người dùng (`reader` hoặc `admin`)
+
+**Ví dụ:**
+```http
+GET /api/users?type=reader          # Chỉ lấy danh sách độc giả
+GET /api/users?type=admin           # Chỉ lấy danh sách admin
+GET /api/users?page=2&limit=20      # Lấy trang 2, 20 items mỗi trang
+GET /api/users?type=reader&page=1&limit=5  # Lấy 5 độc giả đầu tiên
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "username": "string",
+      "email": "string",
+      "role": "reader",
+      "accountStatus": "active",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "totalItems": 50,
+    "totalPages": 5,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```
+
+### 4. Đổi mật khẩu
 ```http
 POST /api/auth/change-password
 ```
@@ -66,7 +130,7 @@ POST /api/auth/change-password
 }
 ```
 
-### 3. Quên mật khẩu
+### 5. Quên mật khẩu
 ```http
 POST /api/auth/forgot-password
 ```
@@ -78,7 +142,7 @@ POST /api/auth/forgot-password
 }
 ```
 
-### 4. Đặt lại mật khẩu
+### 6. Đặt lại mật khẩu
 ```http
 POST /api/auth/reset-password
 ```
@@ -105,7 +169,7 @@ POST /api/auth/reset-password
    - Tự động kiểm tra trạng thái tài khoản
 
 3. **Tài khoản:**
-   - Có 3 trạng thái: active, inactive, banned
+   - Có 3 trạng thái: active, suspended, banned
    - Tự động khóa sau nhiều lần đăng nhập thất bại
    - Chỉ tài khoản active mới có thể đăng nhập
 
@@ -143,6 +207,15 @@ export class LoginDto {
   @IsString({ message: 'Mật khẩu phải là chuỗi ký tự' })
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
   password: string;
+}
+```
+
+### Filter Users DTO
+```typescript
+export class FilterUsersDto {
+  @IsOptional()
+  @IsEnum(UserRole, { message: 'Type phải là reader hoặc admin' })
+  type?: UserRole;
 }
 ```
 
