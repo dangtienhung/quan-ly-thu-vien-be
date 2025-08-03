@@ -76,7 +76,7 @@ export class UsersController {
     description: 'Chưa đăng nhập hoặc token hết hạn.',
   })
   async getCurrentUser(@Request() req): Promise<User> {
-    return this.usersService.findOne(req.user.id);
+    return this.usersService.findOne(req.user.sub);
   }
 
   // READ ALL - Danh sách users

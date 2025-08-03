@@ -40,7 +40,10 @@ export class BorrowRecordsService {
       renewal_count: createBorrowRecordDto.renewal_count || 0,
     });
 
-    return await this.borrowRecordRepository.save(borrowRecord);
+    const savedRecord = await this.borrowRecordRepository.save(borrowRecord);
+
+    // Trả về bản ghi với đầy đủ thông tin sách
+    return await this.findOne(savedRecord.id);
   }
 
   // Lấy tất cả bản ghi mượn sách với phân trang
@@ -51,7 +54,7 @@ export class BorrowRecordsService {
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
-      relations: ['reader', 'physicalCopy', 'librarian'],
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -77,7 +80,7 @@ export class BorrowRecordsService {
   async findOne(id: string): Promise<BorrowRecord> {
     const borrowRecord = await this.borrowRecordRepository.findOne({
       where: { id },
-      relations: ['reader', 'physicalCopy', 'librarian'],
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
     });
 
     if (!borrowRecord) {
@@ -101,9 +104,11 @@ export class BorrowRecordsService {
       .createQueryBuilder('borrowRecord')
       .leftJoinAndSelect('borrowRecord.reader', 'reader')
       .leftJoinAndSelect('borrowRecord.physicalCopy', 'physicalCopy')
+      .leftJoinAndSelect('physicalCopy.book', 'book')
       .leftJoinAndSelect('borrowRecord.librarian', 'librarian')
       .where('reader.fullName ILIKE :query', { query: `%${query}%` })
       .orWhere('physicalCopy.barcode ILIKE :query', { query: `%${query}%` })
+      .orWhere('book.title ILIKE :query', { query: `%${query}%` })
       .orWhere('borrowRecord.borrow_notes ILIKE :query', {
         query: `%${query}%`,
       })
@@ -141,7 +146,7 @@ export class BorrowRecordsService {
 
     const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
       where: { status },
-      relations: ['reader', 'physicalCopy', 'librarian'],
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -173,7 +178,7 @@ export class BorrowRecordsService {
 
     const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
       where: { reader_id: readerId },
-      relations: ['reader', 'physicalCopy', 'librarian'],
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -207,7 +212,7 @@ export class BorrowRecordsService {
         status: BorrowStatus.BORROWED,
         due_date: LessThan(new Date()),
       },
-      relations: ['reader', 'physicalCopy', 'librarian'],
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
       order: { due_date: 'ASC' },
       skip,
       take: limit,
@@ -249,7 +254,10 @@ export class BorrowRecordsService {
     }
 
     Object.assign(borrowRecord, updateData);
-    return await this.borrowRecordRepository.save(borrowRecord);
+    const savedRecord = await this.borrowRecordRepository.save(borrowRecord);
+
+    // Trả về bản ghi với đầy đủ thông tin sách
+    return await this.findOne(savedRecord.id);
   }
 
   // Trả sách
@@ -266,7 +274,10 @@ export class BorrowRecordsService {
       borrowRecord.return_notes = returnNotes;
     }
 
-    return await this.borrowRecordRepository.save(borrowRecord);
+    const savedRecord = await this.borrowRecordRepository.save(borrowRecord);
+
+    // Trả về bản ghi với đầy đủ thông tin sách
+    return await this.findOne(savedRecord.id);
   }
 
   // Gia hạn sách
@@ -287,7 +298,10 @@ export class BorrowRecordsService {
     borrowRecord.due_date = newDueDate;
     borrowRecord.renewal_count += 1;
 
-    return await this.borrowRecordRepository.save(borrowRecord);
+    const savedRecord = await this.borrowRecordRepository.save(borrowRecord);
+
+    // Trả về bản ghi với đầy đủ thông tin sách
+    return await this.findOne(savedRecord.id);
   }
 
   // Xóa bản ghi mượn sách

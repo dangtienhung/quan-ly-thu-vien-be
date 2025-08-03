@@ -83,6 +83,7 @@ export class UsersService {
 
   // READ ONE - Tìm user theo ID
   async findOne(id: string): Promise<User> {
+    console.log('🚀 ~ UsersService ~ findOne ~ id:', id);
     const user = await this.userRepository.findOne({
       where: { id },
       // relations: ['reader'], // TODO: Uncomment when Reader entity relationships are stable
