@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BooksService } from 'src/books/books.service';
-import { Book, BookType } from 'src/books/entities/book.entity';
+import { BookType } from 'src/books/entities/book.entity';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -23,7 +23,6 @@ import {
 @Injectable()
 export class PhysicalCopyService {
   constructor(
-    @InjectRepository(Book)
     private readonly booksService: BooksService,
     @InjectRepository(PhysicalCopy)
     private readonly physicalCopyRepository: Repository<PhysicalCopy>,

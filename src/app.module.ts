@@ -22,6 +22,8 @@ import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
 import { RenewalsModule } from './renewals/renewals.module';
 import { FinesModule } from './fines/fines.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { ImagesModule } from './images/images.module';
 
 @Module({
   imports: [
@@ -59,6 +61,8 @@ import { ReservationsModule } from './reservations/reservations.module';
     RenewalsModule,
     FinesModule,
     ReservationsModule,
+    UploadsModule,
+    ImagesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -30,6 +30,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { BooksService } from './books.service';
 import { BookWithAuthorsDto } from './dto/book-with-authors.dto';
 import { CreateBookDto } from './dto/create-book.dto';
+import { FindAllBooksDto } from './dto/find-all-books.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
 
@@ -70,18 +71,6 @@ export class BooksController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách sách có phân trang' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang (mặc định: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng mỗi trang (mặc định: 10)',
-  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách sách thành công.',
@@ -89,9 +78,9 @@ export class BooksController {
     isArray: true,
   })
   findAll(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() findAllBooksDto: FindAllBooksDto,
   ): Promise<PaginatedResponseDto<BookWithAuthors>> {
-    return this.booksService.findAll(paginationQuery);
+    return this.booksService.findAll(findAllBooksDto);
   }
 
   @Get('search')

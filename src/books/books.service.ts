@@ -20,6 +20,7 @@ import { UpdatePhysicalCopyDto } from '../physical-copy/dto/update-physical-copy
 import { PhysicalCopy } from '../physical-copy/entities/physical-copy.entity';
 import { PublishersService } from '../publishers/publishers.service';
 import { CreateBookDto } from './dto/create-book.dto';
+import { FindAllBooksDto } from './dto/find-all-books.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book, BookType } from './entities/book.entity';
 
@@ -89,17 +90,26 @@ export class BooksService {
 
   // Lấy danh sách có phân trang
   async findAll(
-    paginationQuery: PaginationQueryDto,
+    findAllBooksDto: FindAllBooksDto,
   ): Promise<PaginatedResponseDto<BookWithAuthors>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, type } = findAllBooksDto;
     const skip = (page - 1) * limit;
 
-    const [data, totalItems] = await this.bookRepository.findAndCount({
-      relations: ['category', 'publisher'],
-      order: { created_at: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Tạo query builder với điều kiện lọc theo type
+    const queryBuilder = this.bookRepository
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.category', 'category')
+      .leftJoinAndSelect('book.publisher', 'publisher')
+      .orderBy('book.created_at', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    // Thêm điều kiện lọc theo type nếu có
+    if (type) {
+      queryBuilder.andWhere('book.book_type = :type', { type });
+    }
+
+    const [data, totalItems] = await queryBuilder.getManyAndCount();
 
     // Lấy thông tin tác giả cho từng sách
     const booksWithAuthors = await Promise.all(
