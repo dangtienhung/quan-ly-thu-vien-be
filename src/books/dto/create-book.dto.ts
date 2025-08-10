@@ -1,5 +1,5 @@
-import { BookType, PhysicalType } from '../entities/book.entity';
 import {
+  ArrayUnique,
   IsArray,
   IsEnum,
   IsInt,
@@ -12,6 +12,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { BookType, PhysicalType } from '../entities/book.entity';
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -122,12 +123,20 @@ export class CreateBookDto {
   publisher_id: string;
 
   @ApiProperty({
-    description: 'ID của thể loại',
+    description: 'ID của thể loại (category tổng quát)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsNotEmpty({ message: 'ID thể loại không được để trống' })
   @IsUUID('4', { message: 'ID thể loại không hợp lệ' })
   category_id: string;
+
+  @ApiProperty({
+    description: 'ID thể loại chính (BookCategories)',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID thể loại chính không hợp lệ' })
+  main_category_id?: string | null;
 
   @ApiProperty({
     description: 'Danh sách ID của các tác giả',
@@ -138,4 +147,15 @@ export class CreateBookDto {
   @IsArray({ message: 'Danh sách tác giả phải là mảng' })
   @IsUUID('4', { each: true, message: 'ID tác giả không hợp lệ' })
   author_ids: string[];
+
+  @ApiProperty({
+    description: 'Danh sách khối lớp áp dụng',
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  grade_level_ids?: string[];
 }

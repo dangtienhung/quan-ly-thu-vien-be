@@ -10,6 +10,8 @@ import { EBook } from 'src/ebooks/entities/ebook.entity';
 import { Repository } from 'typeorm';
 import { AuthorsService } from '../authors/authors.service';
 import { BookAuthorsService } from '../book-authors/book-authors.service';
+import { BookCategoriesService } from '../book-categories/book-categories.service';
+import { BookGradeLevelsService } from '../book-grade-levels/book-grade-levels.service';
 import { CategoriesService } from '../categories/categories.service';
 import {
   PaginatedResponseDto,
@@ -49,6 +51,8 @@ export class BooksService {
     private readonly bookAuthorsService: BookAuthorsService,
     private readonly categoriesService: CategoriesService,
     private readonly publishersService: PublishersService,
+    private readonly bookCategoriesService: BookCategoriesService,
+    private readonly bookGradeLevelsService: BookGradeLevelsService,
   ) {}
 
   // Tạo sách mới
@@ -72,6 +76,11 @@ export class BooksService {
       throw new BadRequestException('Sách vật lý phải có physical_type');
     }
 
+    // Kiểm tra main_category_id nếu có
+    if (createBookDto.main_category_id) {
+      await this.bookCategoriesService.findOne(createBookDto.main_category_id);
+    }
+
     // Tạo sách
     const book = this.bookRepository.create(createBookDto);
     const savedBook = await this.bookRepository.save(book);
@@ -83,6 +92,14 @@ export class BooksService {
         author_id: authorId,
       }));
       await this.bookAuthorsService.createMany(bookAuthorDtos);
+    }
+
+    // Thiết lập grade levels nếu có
+    if (createBookDto.grade_level_ids && createBookDto.grade_level_ids.length) {
+      await this.bookGradeLevelsService.setForBook({
+        book_id: savedBook.id,
+        grade_level_ids: createBookDto.grade_level_ids,
+      });
     }
 
     return savedBook;
@@ -100,6 +117,7 @@ export class BooksService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.category', 'category')
       .leftJoinAndSelect('book.publisher', 'publisher')
+      .leftJoinAndSelect('book.mainCategory', 'mainCategory')
       .orderBy('book.created_at', 'DESC')
       .skip(skip)
       .take(limit);
@@ -163,6 +181,7 @@ export class BooksService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.category', 'category')
       .leftJoinAndSelect('book.publisher', 'publisher')
+      .leftJoinAndSelect('book.mainCategory', 'mainCategory')
       .where(
         'book.title ILIKE :query OR book.description ILIKE :query OR book.isbn ILIKE :query',
         { query: `%${query}%` },
@@ -216,7 +235,7 @@ export class BooksService {
   async findOne(id: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { id },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
@@ -246,7 +265,7 @@ export class BooksService {
   async findBySlug(slug: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { slug },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với slug '${slug}'`);
@@ -276,7 +295,7 @@ export class BooksService {
   async findByIsbn(isbn: string): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { isbn },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ISBN ${isbn}`);
@@ -309,7 +328,7 @@ export class BooksService {
   ): Promise<BookWithAuthors> {
     const book = await this.bookRepository.findOne({
       where: { id },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
@@ -323,6 +342,11 @@ export class BooksService {
     // Kiểm tra nhà xuất bản nếu được cập nhật
     if (updateBookDto.publisher_id) {
       await this.publishersService.findOne(updateBookDto.publisher_id);
+    }
+
+    // Kiểm tra main_category_id nếu có
+    if (updateBookDto.main_category_id) {
+      await this.bookCategoriesService.findOne(updateBookDto.main_category_id);
     }
 
     // Cập nhật mối quan hệ với tác giả nếu được cập nhật
@@ -343,6 +367,14 @@ export class BooksService {
         }));
         await this.bookAuthorsService.createMany(bookAuthorDtos);
       }
+    }
+
+    // Cập nhật grade levels nếu có
+    if (updateBookDto.grade_level_ids) {
+      await this.bookGradeLevelsService.setForBook({
+        book_id: id,
+        grade_level_ids: updateBookDto.grade_level_ids,
+      });
     }
 
     // Cập nhật thông tin sách
@@ -382,7 +414,7 @@ export class BooksService {
   async remove(id: string): Promise<void> {
     const book = await this.bookRepository.findOne({
       where: { id },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
@@ -394,7 +426,7 @@ export class BooksService {
   async removeBySlug(slug: string): Promise<void> {
     const book = await this.bookRepository.findOne({
       where: { slug },
-      relations: ['category', 'publisher'],
+      relations: ['category', 'publisher', 'mainCategory'],
     });
     if (!book) {
       throw new NotFoundException(`Không tìm thấy sách với slug '${slug}'`);

@@ -18,9 +18,9 @@ Hệ thống Quản lý Thư viện là một ứng dụng web hiện đại đ�
 ### 📊 Database Schema Overview
 
 ```
-🔑 Core Entities: 15 tables
+🔑 Core Entities: 19 tables
 👥 User Management: 3 tables (Users, ReaderTypes, Readers)
-📚 Book Management: 7 tables (Books, Authors, Categories, Publishers, BookAuthors, PhysicalCopies, EBooks)
+📚 Book Management: 10 tables (Books, Authors, Categories, Publishers, BookAuthors, PhysicalCopies, EBooks, GradeLevels, BookCategories, BookGradeLevels)
 🖼️ Media Management: 2 tables (Images, Uploads)
 🔄 Transaction Management: 4 tables (BorrowRecords, Reservations, Renewals, Fines)
 ```
@@ -45,6 +45,9 @@ Books → Categories
 Books → Publishers
 Books → PhysicalCopies
 Books → EBooks
+Books ↔ BookGradeLevels ↔ GradeLevels
+Books → BookCategories
+BookCategories → BookCategories   -- self-referential via parent_id
 ```
 
 - **Books**: Thông tin sách cơ bản
@@ -54,6 +57,9 @@ Books → EBooks
 - **Publishers**: Nhà xuất bản
 - **PhysicalCopies**: Bản sao vật lý
 - **EBooks**: Sách điện tử
+- **GradeLevels**: Khối lớp (Lớp 1, Đại học, ...)
+- **BookCategories**: Thể loại chi tiết (Sách Toán, Công nghệ, ...)
+- **BookGradeLevels**: Bảng liên kết Sách - Khối lớp
 
 #### 3. **Media Management Layer**
 
@@ -146,6 +152,7 @@ interface Book {
   physical_type: 'library_use' | 'borrowable'; // Chỉ cho sách vật lý
   publisher_id: uuid;
   category_id: uuid;
+  main_category_id: uuid; // Link to BookCategories (thể loại chính)
 }
 ```
 
@@ -183,6 +190,37 @@ interface Category {
   id: uuid;
   category_name: string;
   description: string;
+}
+```
+
+#### **GradeLevels Table**
+
+```typescript
+interface GradeLevel {
+  id: uuid;
+  name: string; // Unique (ví dụ: "Lớp 1", "Đại học")
+  description: string;
+  order: number; // Sắp xếp hiển thị
+}
+```
+
+#### **BookCategories Table**
+
+```typescript
+interface BookCategory {
+  id: uuid;
+  name: string; // Unique (ví dụ: "Sách Toán", "Sách Công nghệ")
+  parent_id: uuid | null; // Danh mục cha (self-reference)
+}
+```
+
+#### **BookGradeLevels Table**
+
+```typescript
+interface BookGradeLevel {
+  book_id: uuid; // Ref → Books.id
+  grade_level_id: uuid; // Ref → GradeLevels.id
+  // Composite primary key: (book_id, grade_level_id)
 }
 ```
 
@@ -341,18 +379,30 @@ interface Fine {
 5. **Books ↔ Authors**: Many-to-Many (via BookAuthors)
 6. **Books → Images**: Many-to-One relationship (cover images)
 7. **EBooks → Uploads**: Many-to-One relationship (PDF files)
-8. **Readers → BorrowRecords**: One-to-Many relationship
-9. **PhysicalCopies → BorrowRecords**: One-to-Many relationship
-10. **BorrowRecords → Renewals**: One-to-Many relationship
-11. **BorrowRecords → Fines**: One-to-Many relationship
+8. **Books ↔ GradeLevels**: Many-to-Many (via BookGradeLevels)
+9. **Books → BookCategories**: Many-to-One (main_category_id)
+10. **BookCategories → BookCategories**: One-to-Many self-referential (parent_id)
+11. **Readers → BorrowRecords**: One-to-Many relationship
+12. **PhysicalCopies → BorrowRecords**: One-to-Many relationship
+13. **BorrowRecords → Renewals**: One-to-Many relationship
+14. **BorrowRecords → Fines**: One-to-Many relationship
+
+```mermaid
+erDiagram
+    Books ||--o{ BookGradeLevels : "1-nhiều"
+    GradeLevels ||--o{ BookGradeLevels : "1-nhiều"
+    Books }|--|| BookCategories : "main_category_id"
+    BookCategories ||--o{ BookCategories : "parent_id"
+```
 
 ### **Key Constraints**
 
 - **UUID Primary Keys**: Tất cả tables sử dụng UUID
-- **Unique Constraints**: username, email, card_number, barcode, isbn, file_name, slug
+- **Unique Constraints**: username, email, card_number, barcode, isbn, file_name, slug, GradeLevels.name, BookCategories.name
+- **Composite Primary Keys**: BookGradeLevels(book_id, grade_level_id)
 - **Enum Constraints**: role, account_status, book_type, status fields
 - **Foreign Key Constraints**: Đảm bảo referential integrity
-- **Indexes**: Optimize queries cho borrow_status, due_date, slug
+- **Indexes**: Optimize queries cho borrow_status, due_date, slug, book_category, grade_level
 
 ## 🚀 Business Logic & Rules
 
@@ -571,6 +621,17 @@ CREATE INDEX images_cloudinary_public_id_idx ON Images(cloudinary_public_id);
 CREATE INDEX uploads_slug_idx ON Uploads(slug);
 CREATE INDEX uploads_created_at_idx ON Uploads(created_at);
 CREATE INDEX uploads_file_name_idx ON Uploads(file_name);
+-- New indexes for classification tables
+CREATE INDEX book_grade_levels_book_id_idx ON BookGradeLevels(book_id);
+CREATE INDEX book_grade_levels_grade_level_id_idx ON BookGradeLevels(grade_level_id);
+CREATE INDEX book_categories_parent_id_idx ON BookCategories(parent_id);
+-- Helpful indexes for lookups
+CREATE INDEX books_main_category_idx ON Books(main_category_id);
+-- Uniqueness constraints via indexes
+CREATE UNIQUE INDEX grade_levels_name_unique_idx ON GradeLevels(name);
+CREATE UNIQUE INDEX book_categories_name_unique_idx ON BookCategories(name);
+-- Composite primary key for mapping table (if not defined in DDL)
+-- ALTER TABLE BookGradeLevels ADD PRIMARY KEY (book_id, grade_level_id);
 ```
 
 ### **Query Optimization**
@@ -629,6 +690,7 @@ CREATE INDEX uploads_file_name_idx ON Uploads(file_name);
 - ✅ Fine management
 - ✅ Image upload và management
 - ✅ File upload và management
+- ✅ Grade levels & detailed categories (DB schema)
 
 ### **Phase 2 - Advanced Features**
 
@@ -637,7 +699,8 @@ CREATE INDEX uploads_file_name_idx ON Uploads(file_name);
 - 📋 Integration với external systems
 - 📋 AI-powered recommendations
 - 📋 Advanced image processing (AI cropping, multiple formats)
-- 📋 File compression và optimization
+- 🗂️ File compression và optimization
+- 🔎 Advanced search/filter theo GradeLevels & BookCategories
 
 ### **Phase 3 - Enterprise Features**
 
@@ -652,9 +715,9 @@ CREATE INDEX uploads_file_name_idx ON Uploads(file_name);
 
 ## 📞 Technical Support
 
-**Database Schema Version**: 1.2
+**Database Schema Version**: 1.3
 **Last Updated**: 2024-01-01
-**Schema Complexity**: 15 tables, 22+ relationships
+**Schema Complexity**: 19 tables, 25+ relationships
 **Estimated Records**:
 
 - Books: 10,000+

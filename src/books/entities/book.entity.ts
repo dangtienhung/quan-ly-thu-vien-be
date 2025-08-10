@@ -11,9 +11,10 @@ import {
 } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
+import slug from 'slug';
+import { BookCategory } from '../../book-categories/entities/book-category.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { Publisher } from '../../publishers/entities/publisher.entity';
-import slug from 'slug';
 
 export enum BookType {
   PHYSICAL = 'physical',
@@ -146,6 +147,17 @@ export class Book {
   @ManyToOne(() => Category, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  @ApiProperty({
+    description: 'ID thể loại chính (BookCategories)',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  main_category_id?: string | null;
+
+  @ManyToOne(() => BookCategory, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'main_category_id' })
+  mainCategory?: BookCategory | null;
 
   @ApiProperty({
     description: 'Danh sách các tác giả (được quản lý qua BookAuthors)',
