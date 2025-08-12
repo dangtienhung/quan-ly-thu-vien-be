@@ -31,6 +31,7 @@ import { BooksService } from './books.service';
 import { BookWithAuthorsDto } from './dto/book-with-authors.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { FindAllBooksDto } from './dto/find-all-books.dto';
+import { UpdateBookViewDto } from './dto/update-book-view.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
 
@@ -46,8 +47,6 @@ interface BookWithAuthors extends Omit<Book, 'authors'> {
 }
 
 @ApiTags('Books')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
@@ -55,7 +54,9 @@ export class BooksController {
   // Book Endpoints
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo mới sách (Admin)' })
   @ApiResponse({
     status: 201,
@@ -71,6 +72,36 @@ export class BooksController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách sách có phân trang' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang (mặc định: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 10)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['physical', 'ebook'],
+    description: 'Lọc theo loại sách',
+  })
+  @ApiQuery({
+    name: 'main_category_id',
+    required: false,
+    type: String,
+    description: 'Lọc theo ID thể loại chính (BookCategories)',
+  })
+  @ApiQuery({
+    name: 'category_id',
+    required: false,
+    type: String,
+    description: 'Lọc theo ID thể loại (Categories)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách sách thành công.',
@@ -81,6 +112,25 @@ export class BooksController {
     @Query() findAllBooksDto: FindAllBooksDto,
   ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     return this.booksService.findAll(findAllBooksDto);
+  }
+
+  @Get('latest')
+  @ApiOperation({ summary: 'Lấy danh sách sách mới thêm vào' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng sách (mặc định: 20, tối đa: 50)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách sách mới thành công.',
+    type: BookWithAuthorsDto,
+    isArray: true,
+  })
+  @ApiResponse({ status: 400, description: 'Limit không hợp lệ.' })
+  findLatestBooks(@Query('limit') limit?: number): Promise<BookWithAuthors[]> {
+    return this.booksService.findLatestBooks(limit);
   }
 
   @Get('search')
@@ -151,7 +201,9 @@ export class BooksController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của sách' })
   @ApiResponse({
@@ -170,7 +222,9 @@ export class BooksController {
   }
 
   @Patch('slug/:slug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật sách theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của sách' })
   @ApiResponse({
@@ -189,7 +243,9 @@ export class BooksController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của sách' })
   @ApiResponse({ status: 204, description: 'Xóa sách thành công.' })
@@ -201,7 +257,9 @@ export class BooksController {
   }
 
   @Delete('slug/:slug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa sách theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của sách' })
   @ApiResponse({ status: 204, description: 'Xóa sách thành công.' })
@@ -213,7 +271,9 @@ export class BooksController {
   }
 
   @Post('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo nhiều sách (Admin)' })
   @ApiBody({
     type: [CreateBookDto],
@@ -259,5 +319,79 @@ export class BooksController {
   @HttpCode(HttpStatus.CREATED)
   createMany(@Body() createBookDtos: CreateBookDto[]): Promise<Book[]> {
     return this.booksService.createMany(createBookDtos);
+  }
+
+  // Cập nhật số lượt xem sách theo ID
+  @Patch(':id/view')
+  @ApiOperation({ summary: 'Cập nhật số lượt xem sách theo ID' })
+  @ApiParam({ name: 'id', description: 'UUID của sách' })
+  @ApiBody({
+    type: UpdateBookViewDto,
+    description: 'Thông tin cập nhật số lượt xem',
+    examples: {
+      increment: {
+        summary: 'Tăng số lượt xem lên 1',
+        value: {
+          type: 'increment',
+        },
+      },
+      set: {
+        summary: 'Đặt số lượt xem thành giá trị cụ thể',
+        value: {
+          type: 'set',
+          value: 100,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật số lượt xem thành công.',
+    type: Book,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy sách.' })
+  updateView(
+    @Param('id') id: string,
+    @Body() updateBookViewDto: UpdateBookViewDto,
+  ): Promise<Book> {
+    return this.booksService.updateView(id, updateBookViewDto);
+  }
+
+  // Cập nhật số lượt xem sách theo slug
+  @Patch('slug/:slug/view')
+  @ApiOperation({ summary: 'Cập nhật số lượt xem sách theo slug' })
+  @ApiParam({ name: 'slug', description: 'Slug của sách' })
+  @ApiBody({
+    type: UpdateBookViewDto,
+    description: 'Thông tin cập nhật số lượt xem',
+    examples: {
+      increment: {
+        summary: 'Tăng số lượt xem lên 1',
+        value: {
+          type: 'increment',
+        },
+      },
+      set: {
+        summary: 'Đặt số lượt xem thành giá trị cụ thể',
+        value: {
+          type: 'set',
+          value: 100,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật số lượt xem thành công.',
+    type: Book,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy sách.' })
+  updateViewBySlug(
+    @Param('slug') slug: string,
+    @Body() updateBookViewDto: UpdateBookViewDto,
+  ): Promise<Book> {
+    return this.booksService.updateViewBySlug(slug, updateBookViewDto);
   }
 }

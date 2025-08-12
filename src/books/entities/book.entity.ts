@@ -175,6 +175,14 @@ export class Book {
   created_at: Date;
 
   @ApiProperty({
+    description: 'Số lượt xem sách',
+    example: 0,
+    default: 0,
+  })
+  @Column({ type: 'int', default: 0 })
+  view: number;
+
+  @ApiProperty({
     description: 'Ngày cập nhật cuối cùng',
     example: '2024-01-01T00:00:00.000Z',
   })

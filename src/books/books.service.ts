@@ -23,6 +23,7 @@ import { PhysicalCopy } from '../physical-copy/entities/physical-copy.entity';
 import { PublishersService } from '../publishers/publishers.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { FindAllBooksDto } from './dto/find-all-books.dto';
+import { UpdateBookViewDto, ViewUpdateType } from './dto/update-book-view.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book, BookType } from './entities/book.entity';
 
@@ -109,7 +110,13 @@ export class BooksService {
   async findAll(
     findAllBooksDto: FindAllBooksDto,
   ): Promise<PaginatedResponseDto<BookWithAuthors>> {
-    const { page = 1, limit = 10, type } = findAllBooksDto;
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      main_category_id,
+      category_id,
+    } = findAllBooksDto;
     const skip = (page - 1) * limit;
 
     // Tạo query builder với điều kiện lọc theo type
@@ -125,6 +132,18 @@ export class BooksService {
     // Thêm điều kiện lọc theo type nếu có
     if (type) {
       queryBuilder.andWhere('book.book_type = :type', { type });
+    }
+
+    // Thêm điều kiện lọc theo main_category_id nếu có
+    if (main_category_id) {
+      queryBuilder.andWhere('book.main_category_id = :main_category_id', {
+        main_category_id,
+      });
+    }
+
+    // Thêm điều kiện lọc theo category_id nếu có
+    if (category_id) {
+      queryBuilder.andWhere('book.category_id = :category_id', { category_id });
     }
 
     const [data, totalItems] = await queryBuilder.getManyAndCount();
@@ -521,5 +540,100 @@ export class BooksService {
   async createMany(createBookDtos: CreateBookDto[]): Promise<Book[]> {
     const books = this.bookRepository.create(createBookDtos);
     return await this.bookRepository.save(books);
+  }
+
+  // Cập nhật số lượt xem sách
+  async updateView(
+    id: string,
+    updateBookViewDto: UpdateBookViewDto,
+  ): Promise<Book> {
+    const book = await this.bookRepository.findOne({ where: { id } });
+    if (!book) {
+      throw new NotFoundException(`Không tìm thấy sách với ID ${id}`);
+    }
+
+    const { type = ViewUpdateType.INCREMENT, value } = updateBookViewDto;
+
+    if (type === ViewUpdateType.INCREMENT) {
+      book.view += 1;
+    } else if (type === ViewUpdateType.SET) {
+      if (value === undefined || value < 0) {
+        throw new BadRequestException(
+          'Giá trị số lượt xem phải là số không âm',
+        );
+      }
+      book.view = value;
+    }
+
+    return await this.bookRepository.save(book);
+  }
+
+  // Cập nhật số lượt xem sách theo slug
+  async updateViewBySlug(
+    slug: string,
+    updateBookViewDto: UpdateBookViewDto,
+  ): Promise<Book> {
+    const book = await this.bookRepository.findOne({ where: { slug } });
+    if (!book) {
+      throw new NotFoundException(`Không tìm thấy sách với slug '${slug}'`);
+    }
+
+    const { type = ViewUpdateType.INCREMENT, value } = updateBookViewDto;
+
+    if (type === ViewUpdateType.INCREMENT) {
+      book.view += 1;
+    } else if (type === ViewUpdateType.SET) {
+      if (value === undefined || value < 0) {
+        throw new BadRequestException(
+          'Giá trị số lượt xem phải là số không âm',
+        );
+      }
+      book.view = value;
+    }
+
+    return await this.bookRepository.save(book);
+  }
+
+  // Lấy sách mới thêm vào
+  async findLatestBooks(limit: number = 20): Promise<BookWithAuthors[]> {
+    // Validate limit
+    if (limit && (limit < 1 || limit > 50)) {
+      throw new BadRequestException('Limit phải từ 1 đến 50');
+    }
+
+    const queryBuilder = this.bookRepository
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.category', 'category')
+      .leftJoinAndSelect('book.publisher', 'publisher')
+      .leftJoinAndSelect('book.mainCategory', 'mainCategory')
+      .orderBy('book.created_at', 'DESC')
+      .take(limit);
+
+    const data = await queryBuilder.getMany();
+
+    // Lấy thông tin tác giả cho từng sách
+    const booksWithAuthors = await Promise.all(
+      data.map(async (book) => {
+        const bookAuthorsResponse = await this.bookAuthorsService.findByBookId(
+          book.id,
+          { page: 1, limit: 100 },
+        );
+
+        const authors = bookAuthorsResponse.data.map((ba) => ({
+          id: ba.author.id,
+          author_name: ba.author.author_name,
+          slug: ba.author.slug,
+          bio: ba.author.bio,
+          nationality: ba.author.nationality,
+        }));
+
+        return {
+          ...book,
+          authors,
+        } as BookWithAuthors;
+      }),
+    );
+
+    return booksWithAuthors;
   }
 }
