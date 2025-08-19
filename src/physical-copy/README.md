@@ -96,13 +96,50 @@ GET /physical-copies/location/Kệ A2-T3?page=1&limit=10
 GET /physical-copies/available?page=1&limit=10
 ```
 
-### **9. Bản sao cần bảo trì**
+### **9. Bản sao có sẵn theo bookId**
+
+```http
+GET /physical-copies/book/550e8400-e29b-41d4-a716-446655440000/available?page=1&limit=10
+```
+
+**Mô tả:** Lấy danh sách các bản sao có sẵn (status = 'available') của một sách cụ thể theo bookId.
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "barcode": "LIB-2024-001",
+      "status": "available",
+      "current_condition": "new",
+      "location": "Kệ A2-T3",
+      "book": {
+        "id": "uuid",
+        "title": "Tên sách",
+        "isbn": "978-0-123456-47-2"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "totalItems": 5,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
+}
+```
+
+### **10. Bản sao cần bảo trì**
 
 ```http
 GET /physical-copies/maintenance?page=1&limit=10
 ```
 
-### **10. Thống kê bản sao**
+### **11. Thống kê bản sao**
 
 ```http
 GET /physical-copies/stats
@@ -134,31 +171,31 @@ GET /physical-copies/stats
 }
 ```
 
-### **11. Lấy bản sao theo sách**
+### **12. Lấy bản sao theo sách**
 
 ```http
 GET /physical-copies/book/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
 ```
 
-### **12. Tìm theo barcode**
+### **13. Tìm theo barcode**
 
 ```http
 GET /physical-copies/barcode/LIB-2024-001
 ```
 
-### **13. Lấy chi tiết bản sao**
+### **14. Lấy chi tiết bản sao**
 
 ```http
 GET /physical-copies/550e8400-e29b-41d4-a716-446655440000
 ```
 
-### **14. Cập nhật bản sao**
+### **15. Cập nhật bản sao**
 
 ```http
 PATCH /physical-copies/550e8400-e29b-41d4-a716-446655440000
 ```
 
-### **15. Cập nhật trạng thái (Admin)**
+### **16. Cập nhật trạng thái (Admin)**
 
 ```http
 PATCH /physical-copies/550e8400-e29b-41d4-a716-446655440000/status
@@ -173,7 +210,7 @@ PATCH /physical-copies/550e8400-e29b-41d4-a716-446655440000/status
 }
 ```
 
-### **16. Cập nhật tình trạng (Admin)**
+### **17. Cập nhật tình trạng (Admin)**
 
 ```http
 PATCH /physical-copies/550e8400-e29b-41d4-a716-446655440000/condition

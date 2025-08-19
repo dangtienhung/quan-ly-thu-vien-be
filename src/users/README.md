@@ -26,11 +26,13 @@ JWT_EXPIRES_IN=1d           # Thời gian token hết hạn (1 ngày)
 ## 📝 API Endpoints
 
 ### 1. Đăng nhập
+
 ```http
 POST /api/auth/login
 ```
 
 **Request Body:**
+
 ```json
 {
   "username": "string",
@@ -39,6 +41,7 @@ POST /api/auth/login
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "string",
@@ -53,12 +56,15 @@ POST /api/auth/login
 ```
 
 ### 2. Lấy thông tin người dùng hiện tại
+
 ```http
 GET /api/users/me
 ```
+
 **Headers:** `Authorization: Bearer {token}`
 
 **Response:**
+
 ```json
 {
   "id": "uuid",
@@ -73,16 +79,19 @@ GET /api/users/me
 ```
 
 ### 3. Lấy danh sách người dùng (Admin)
+
 ```http
 GET /api/users?page=1&limit=10&type=reader
 ```
 
 **Query Parameters:**
+
 - `page` (optional): Số trang (mặc định: 1)
 - `limit` (optional): Số lượng mỗi trang (mặc định: 10)
 - `type` (optional): Lọc theo loại người dùng (`reader` hoặc `admin`)
 
 **Ví dụ:**
+
 ```http
 GET /api/users?type=reader          # Chỉ lấy danh sách độc giả
 GET /api/users?type=admin           # Chỉ lấy danh sách admin
@@ -91,6 +100,7 @@ GET /api/users?type=reader&page=1&limit=5  # Lấy 5 độc giả đầu tiên
 ```
 
 **Response:**
+
 ```json
 {
   "data": [
@@ -116,12 +126,15 @@ GET /api/users?type=reader&page=1&limit=5  # Lấy 5 độc giả đầu tiên
 ```
 
 ### 4. Đổi mật khẩu
+
 ```http
 POST /api/auth/change-password
 ```
+
 **Headers:** `Authorization: Bearer {token}`
 
 **Request Body:**
+
 ```json
 {
   "currentPassword": "string",
@@ -131,11 +144,13 @@ POST /api/auth/change-password
 ```
 
 ### 5. Quên mật khẩu
+
 ```http
 POST /api/auth/forgot-password
 ```
 
 **Request Body:**
+
 ```json
 {
   "email": "string"
@@ -143,11 +158,13 @@ POST /api/auth/forgot-password
 ```
 
 ### 6. Đặt lại mật khẩu
+
 ```http
 POST /api/auth/reset-password
 ```
 
 **Request Body:**
+
 ```json
 {
   "token": "string",
@@ -176,6 +193,7 @@ POST /api/auth/reset-password
 ## 🛡️ Guards và Decorators
 
 ### JWT Guard
+
 ```typescript
 @UseGuards(JwtAuthGuard)
 @Get('profile')
@@ -185,8 +203,9 @@ getProfile(@Request() req) {
 ```
 
 ### Role Guard (Coming soon)
+
 ```typescript
-@Roles('admin')
+// @Roles('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Get('admin-only')
 adminEndpoint() {
@@ -197,6 +216,7 @@ adminEndpoint() {
 ## 🔍 Validation
 
 ### Login DTO
+
 ```typescript
 export class LoginDto {
   @IsNotEmpty({ message: 'Tên đăng nhập không được để trống' })
@@ -211,6 +231,7 @@ export class LoginDto {
 ```
 
 ### Filter Users DTO
+
 ```typescript
 export class FilterUsersDto {
   @IsOptional()
@@ -220,6 +241,7 @@ export class FilterUsersDto {
 ```
 
 ### Change Password DTO
+
 ```typescript
 export class ChangePasswordDto {
   @IsNotEmpty({ message: 'Mật khẩu hiện tại không được để trống' })
@@ -238,6 +260,7 @@ export class ChangePasswordDto {
 ## 📚 Swagger Documentation
 
 Truy cập `/api` để xem tài liệu API đầy đủ với:
+
 - Mô tả chi tiết các endpoints
 - Request/Response schemas
 - Authentication requirements
@@ -283,6 +306,7 @@ Tất cả lỗi authentication được xử lý tập trung và trả về for
 ```
 
 Các mã lỗi phổ biến:
+
 - 401: Chưa đăng nhập hoặc token hết hạn
 - 403: Không có quyền truy cập
 - 404: Tài khoản không tồn tại

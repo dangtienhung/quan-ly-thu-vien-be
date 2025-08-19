@@ -309,6 +309,49 @@ export class PhysicalCopyService {
     return { data, meta };
   }
 
+  // Lấy bản sao có sẵn theo bookId
+  async findAvailableByBookId(
+    bookId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<PhysicalCopy>> {
+    const { page = 1, limit = 10 } = paginationQuery;
+    const skip = (page - 1) * limit;
+
+    // Kiểm tra sách có tồn tại không
+    await this.booksService.findOne(bookId);
+
+    const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
+      where: {
+        book_id: bookId,
+        status: CopyStatus.AVAILABLE,
+        is_archived: false,
+      },
+      relations: ['book'],
+      order: { created_at: 'DESC' },
+      skip,
+      take: limit,
+    });
+    console.log(
+      '🚀 ~ PhysicalCopyService ~ findAvailableByBookId ~ data:',
+      data,
+    );
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    const meta: PaginationMetaDto = {
+      page,
+      limit,
+      totalItems,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+    };
+
+    return { data, meta };
+  }
+
   // Lấy bản sao cần bảo trì
   async findNeedingMaintenance(
     paginationQuery: PaginationQueryDto,

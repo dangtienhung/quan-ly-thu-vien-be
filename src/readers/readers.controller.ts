@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -28,6 +27,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateReaderDto } from './dto/create-reader.dto';
+import { ReadersQueryDto } from './dto/readers-query.dto';
 import { UpdateReaderDto } from './dto/update-reader.dto';
 import { Reader } from './entities/reader.entity';
 import { ReadersService } from './readers.service';
@@ -35,7 +35,7 @@ import { ReadersService } from './readers.service';
 @ApiTags('Readers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// // @Roles('admin')
 @Controller('readers')
 export class ReadersController {
   constructor(private readonly readersService: ReadersService) {}
@@ -61,7 +61,9 @@ export class ReadersController {
 
   // READ ALL - Danh sách readers
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách độc giả có phân trang' })
+  @ApiOperation({
+    summary: 'Lấy danh sách độc giả có phân trang và lọc theo các tiêu chí',
+  })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -74,14 +76,38 @@ export class ReadersController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'cardNumber',
+    required: false,
+    type: String,
+    description: 'Lọc theo số thẻ thư viện',
+  })
+  @ApiQuery({
+    name: 'cardExpiryDateFrom',
+    required: false,
+    type: String,
+    description: 'Lọc theo ngày hết hạn thẻ (từ ngày) - format: YYYY-MM-DD',
+  })
+  @ApiQuery({
+    name: 'cardExpiryDateTo',
+    required: false,
+    type: String,
+    description: 'Lọc theo ngày hết hạn thẻ (đến ngày) - format: YYYY-MM-DD',
+  })
+  @ApiQuery({
+    name: 'phone',
+    required: false,
+    type: String,
+    description: 'Lọc theo số điện thoại',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách độc giả thành công.',
   })
   async findAll(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() query: ReadersQueryDto,
   ): Promise<PaginatedResponseDto<Reader>> {
-    return this.readersService.findAll(paginationQuery);
+    return this.readersService.findAll(query);
   }
 
   // SEARCH - Tìm kiếm readers

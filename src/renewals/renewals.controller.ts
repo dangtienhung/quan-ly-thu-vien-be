@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -40,7 +39,7 @@ export class RenewalsController {
   constructor(private readonly renewalsService: RenewalsService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo bản ghi gia hạn sách mới (Admin)' })
   @ApiBody({
     type: CreateRenewalDto,
@@ -255,7 +254,7 @@ export class RenewalsController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật bản ghi gia hạn sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi gia hạn sách' })
   @ApiBody({
@@ -281,7 +280,7 @@ export class RenewalsController {
   }
 
   @Patch(':id/approve')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Phê duyệt gia hạn sách (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi gia hạn sách' })
   @ApiBody({
@@ -316,7 +315,7 @@ export class RenewalsController {
   }
 
   @Patch(':id/reject')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Từ chối gia hạn sách (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi gia hạn sách' })
   @ApiBody({
@@ -351,7 +350,7 @@ export class RenewalsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa bản ghi gia hạn sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi gia hạn sách' })
   @ApiResponse({

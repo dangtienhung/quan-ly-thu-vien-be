@@ -21,7 +21,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { BooksService } from 'src/books/books.service';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -50,7 +49,7 @@ export class PhysicalCopyController {
   // Physical Copy Endpoints
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo bản sao vật lý mới (Admin)' })
   @ApiResponse({
     status: 201,
@@ -67,7 +66,7 @@ export class PhysicalCopyController {
   }
 
   @Post('book/:bookId/many')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo nhiều bản sao cùng lúc cho sách (Admin)' })
   @ApiParam({ name: 'bookId', description: 'UUID của sách' })
   @ApiBody({
@@ -290,6 +289,39 @@ export class PhysicalCopyController {
     return this.physicalCopyService.findAvailable(paginationQuery);
   }
 
+  @Get('book/:bookId/available')
+  @ApiOperation({ summary: 'Lấy danh sách bản sao có sẵn theo bookId' })
+  @ApiParam({ name: 'bookId', description: 'UUID của sách' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang (mặc định: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách bản sao có sẵn theo bookId thành công.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy sách với bookId đã cung cấp.',
+  })
+  findAvailableByBookId(
+    @Param('bookId') bookId: string,
+    @Query() paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<PhysicalCopy>> {
+    return this.physicalCopyService.findAvailableByBookId(
+      bookId,
+      paginationQuery,
+    );
+  }
+
   @Get('maintenance')
   @ApiOperation({ summary: 'Lấy danh sách bản sao cần bảo trì' })
   @ApiQuery({
@@ -427,7 +459,7 @@ export class PhysicalCopyController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật bản sao (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản sao' })
   @ApiResponse({
@@ -449,7 +481,7 @@ export class PhysicalCopyController {
   }
 
   @Patch(':id/status')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật trạng thái bản sao (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản sao' })
   @ApiBody({
@@ -485,7 +517,7 @@ export class PhysicalCopyController {
   }
 
   @Patch(':id/condition')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật tình trạng bản sao (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản sao' })
   @ApiBody({
@@ -525,7 +557,7 @@ export class PhysicalCopyController {
   }
 
   @Patch(':id/archive')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Lưu trữ/Bỏ lưu trữ bản sao (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản sao' })
   @ApiResponse({
@@ -540,7 +572,7 @@ export class PhysicalCopyController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa bản sao (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản sao' })
   @ApiResponse({ status: 204, description: 'Xóa bản sao thành công.' })

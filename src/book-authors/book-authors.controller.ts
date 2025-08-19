@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -40,7 +39,7 @@ export class BookAuthorsController {
   constructor(private readonly bookAuthorsService: BookAuthorsService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo mối quan hệ sách-tác giả mới (Admin)' })
   @ApiBody({
     type: CreateBookAuthorDto,
@@ -61,7 +60,7 @@ export class BookAuthorsController {
   }
 
   @Post('bulk')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo nhiều mối quan hệ sách-tác giả (Admin)' })
   @ApiBody({
     type: [CreateBookAuthorDto],
@@ -220,7 +219,7 @@ export class BookAuthorsController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary: 'Cập nhật mối quan hệ sách-tác giả theo ID (Admin)',
   })
@@ -244,7 +243,7 @@ export class BookAuthorsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa mối quan hệ sách-tác giả theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của mối quan hệ sách-tác giả' })
   @ApiResponse({
@@ -262,7 +261,7 @@ export class BookAuthorsController {
   }
 
   @Delete('book/:bookId')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary: 'Xóa tất cả mối quan hệ sách-tác giả của một sách (Admin)',
   })
@@ -278,7 +277,7 @@ export class BookAuthorsController {
   }
 
   @Delete('author/:authorId')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary: 'Xóa tất cả mối quan hệ sách-tác giả của một tác giả (Admin)',
   })

@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -42,7 +41,7 @@ export class EbooksController {
   // EBook Endpoints
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo ebook mới (Admin)' })
   @ApiResponse({
     status: 201,
@@ -57,7 +56,7 @@ export class EbooksController {
   }
 
   @Post('book/:bookId/many')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo nhiều ebook cùng lúc cho sách (Admin)' })
   @ApiParam({ name: 'bookId', description: 'UUID của sách' })
   @ApiBody({
@@ -436,7 +435,7 @@ export class EbooksController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật ebook (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của ebook' })
   @ApiResponse({
@@ -455,7 +454,7 @@ export class EbooksController {
   }
 
   @Patch(':id/file-info')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật thông tin file ebook (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của ebook' })
   @ApiBody({
@@ -499,7 +498,7 @@ export class EbooksController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa ebook (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của ebook' })
   @ApiResponse({ status: 204, description: 'Xóa ebook thành công.' })
@@ -511,7 +510,7 @@ export class EbooksController {
   }
 
   @Delete('batch')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa nhiều ebook cùng lúc (Admin)' })
   @ApiBody({
     schema: {

@@ -18,12 +18,19 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
+import { CreateMultipleReservationsResponseDto } from './dto/create-multiple-reservations-response.dto';
+import { CreateMultipleReservationsDto } from './dto/create-multiple-reservations.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { FindByBookDto } from './dto/find-by-book.dto';
+import { FindByReaderDto } from './dto/find-by-reader.dto';
+import { FindByStatusDto } from './dto/find-by-status.dto';
+import { FindExpiredDto } from './dto/find-expired.dto';
+import { FindExpiringSoonDto } from './dto/find-expiring-soon.dto';
+import { SearchDto } from './dto/search.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { Reservation, ReservationStatus } from './entities/reservation.entity';
 import { ReservationsService } from './reservations.service';
@@ -51,6 +58,28 @@ export class ReservationsController {
     @Body() createReservationDto: CreateReservationDto,
   ): Promise<Reservation> {
     return this.reservationsService.create(createReservationDto);
+  }
+
+  @Post('bulk')
+  @ApiOperation({ summary: 'Tạo nhiều đặt trước cùng lúc' })
+  @ApiBody({
+    type: CreateMultipleReservationsDto,
+    description: 'Danh sách các đặt trước cần tạo',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo nhiều đặt trước thành công.',
+    type: CreateMultipleReservationsResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 409, description: 'Một số đặt trước đã tồn tại.' })
+  @HttpCode(HttpStatus.CREATED)
+  async createMultiple(
+    @Body() createMultipleReservationsDto: CreateMultipleReservationsDto,
+  ): Promise<CreateMultipleReservationsResponseDto> {
+    return this.reservationsService.createMultiple(
+      createMultipleReservationsDto,
+    );
   }
 
   @Get()
@@ -98,10 +127,9 @@ export class ReservationsController {
   })
   @ApiResponse({ status: 200, description: 'Tìm kiếm đặt trước thành công.' })
   async search(
-    @Query('q') query: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() searchQuery: SearchDto,
   ): Promise<PaginatedResponseDto<Reservation>> {
-    return this.reservationsService.search(query, paginationQuery);
+    return this.reservationsService.search(searchQuery.q, searchQuery);
   }
 
   @Get('status/:status')
@@ -129,7 +157,7 @@ export class ReservationsController {
   })
   async findByStatus(
     @Param('status') status: ReservationStatus,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: FindByStatusDto,
   ): Promise<PaginatedResponseDto<Reservation>> {
     return this.reservationsService.findByStatus(status, paginationQuery);
   }
@@ -155,7 +183,7 @@ export class ReservationsController {
   })
   async findByReader(
     @Param('readerId') readerId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: FindByReaderDto,
   ): Promise<PaginatedResponseDto<Reservation>> {
     return this.reservationsService.findByReader(readerId, paginationQuery);
   }
@@ -181,7 +209,7 @@ export class ReservationsController {
   })
   async findByBook(
     @Param('bookId') bookId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: FindByBookDto,
   ): Promise<PaginatedResponseDto<Reservation>> {
     return this.reservationsService.findByBook(bookId, paginationQuery);
   }
@@ -198,8 +226,10 @@ export class ReservationsController {
     status: 200,
     description: 'Lấy danh sách đặt trước sắp hết hạn thành công.',
   })
-  async findExpiringSoon(@Query('days') days?: number): Promise<Reservation[]> {
-    return this.reservationsService.findExpiringSoon(days);
+  async findExpiringSoon(
+    @Query() query: FindExpiringSoonDto,
+  ): Promise<Reservation[]> {
+    return this.reservationsService.findExpiringSoon(query.days);
   }
 
   @Get('expired')
@@ -221,7 +251,7 @@ export class ReservationsController {
     description: 'Lấy danh sách đặt trước đã hết hạn thành công.',
   })
   async findExpired(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: FindExpiredDto,
   ): Promise<PaginatedResponseDto<Reservation>> {
     return this.reservationsService.findExpired(paginationQuery);
   }
@@ -295,7 +325,7 @@ export class ReservationsController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật đặt trước theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của đặt trước' })
   @ApiBody({ type: UpdateReservationDto, description: 'Thông tin cập nhật' })
@@ -315,7 +345,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/fulfill')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Thực hiện đặt trước (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của đặt trước' })
   @ApiBody({
@@ -359,7 +389,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/cancel')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Hủy đặt trước (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của đặt trước' })
   @ApiBody({
@@ -400,7 +430,7 @@ export class ReservationsController {
   }
 
   @Post('auto-cancel-expired')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tự động hủy đặt trước hết hạn (Admin)' })
   @ApiResponse({
     status: 200,
@@ -423,7 +453,7 @@ export class ReservationsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa đặt trước theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của đặt trước' })
   @ApiResponse({ status: 204, description: 'Xóa đặt trước thành công.' })

@@ -14,6 +14,7 @@ import { Reader } from '../../readers/entities/reader.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum BorrowStatus {
+  PENDING_APPROVAL = 'pending_approval',
   BORROWED = 'borrowed',
   RETURNED = 'returned',
   OVERDUE = 'overdue',
@@ -81,7 +82,7 @@ export class BorrowRecord {
   @Column({
     type: 'enum',
     enum: BorrowStatus,
-    default: BorrowStatus.BORROWED,
+    default: BorrowStatus.PENDING_APPROVAL,
   })
   status: BorrowStatus;
 

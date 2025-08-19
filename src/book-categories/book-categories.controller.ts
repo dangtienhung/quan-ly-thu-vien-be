@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -35,7 +34,7 @@ import { BookCategory } from './entities/book-category.entity';
 @ApiTags('Book Categories - Quản lý Thể loại chi tiết')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// @Roles('admin')
 @Controller('book-categories')
 export class BookCategoriesController {
   constructor(private readonly bookCategoriesService: BookCategoriesService) {}

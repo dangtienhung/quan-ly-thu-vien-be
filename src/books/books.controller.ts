@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -55,7 +54,7 @@ export class BooksController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo mới sách (Admin)' })
   @ApiResponse({
@@ -202,7 +201,7 @@ export class BooksController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của sách' })
@@ -223,7 +222,7 @@ export class BooksController {
 
   @Patch('slug/:slug')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật sách theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của sách' })
@@ -244,7 +243,7 @@ export class BooksController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa sách theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của sách' })
@@ -258,7 +257,7 @@ export class BooksController {
 
   @Delete('slug/:slug')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa sách theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của sách' })
@@ -272,7 +271,7 @@ export class BooksController {
 
   @Post('bulk')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo nhiều sách (Admin)' })
   @ApiBody({

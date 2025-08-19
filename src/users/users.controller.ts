@@ -21,7 +21,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -43,7 +42,7 @@ export class UsersController {
 
   // CREATE - Tạo user mới
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo mới người dùng (Admin)' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({
@@ -81,7 +80,7 @@ export class UsersController {
 
   // READ ALL - Danh sách users
   @Get()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Lấy danh sách người dùng có phân trang (Admin)' })
   @ApiQuery({
     name: 'page',
@@ -114,7 +113,7 @@ export class UsersController {
 
   // SEARCH - Tìm kiếm users
   @Get('search')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary:
       'Tìm kiếm người dùng theo tên đăng nhập, email hoặc tên độc giả (Admin)',
@@ -146,7 +145,7 @@ export class UsersController {
 
   // FILTER - Get users by role
   @Get('role/:role')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo vai trò (Admin)' })
   @ApiParam({ name: 'role', description: 'Vai trò người dùng', enum: UserRole })
   @ApiQuery({
@@ -175,7 +174,7 @@ export class UsersController {
 
   // FILTER - Get users by account status
   @Get('status/:status')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary: 'Lấy danh sách người dùng theo trạng thái tài khoản (Admin)',
   })
@@ -210,7 +209,7 @@ export class UsersController {
 
   // READ ONE - Tìm user theo username
   @Get('username/:username')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({
     summary: 'Lấy thông tin người dùng theo tên đăng nhập (Admin)',
   })
@@ -228,7 +227,7 @@ export class UsersController {
 
   // READ ONE - Tìm user theo email
   @Get('email/:email')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Lấy thông tin người dùng theo email (Admin)' })
   @ApiParam({ name: 'email', description: 'Địa chỉ email' })
   @ApiResponse({
@@ -244,7 +243,7 @@ export class UsersController {
 
   // READ ONE - Tìm user theo ID
   @Get(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
@@ -260,7 +259,7 @@ export class UsersController {
 
   // UPDATE - Cập nhật user
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật thông tin người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiBody({ type: UpdateUserDto })
@@ -284,7 +283,7 @@ export class UsersController {
 
   // UTILITY - Suspend user
   @Patch(':id/suspend')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạm khóa tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
@@ -300,7 +299,7 @@ export class UsersController {
 
   // UTILITY - Reactivate user
   @Patch(':id/reactivate')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Kích hoạt lại tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
@@ -316,7 +315,7 @@ export class UsersController {
 
   // UTILITY - Ban user
   @Patch(':id/ban')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cấm tài khoản người dùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
@@ -332,7 +331,7 @@ export class UsersController {
 
   // UTILITY - Update last login
   @Patch(':id/last-login')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật thời gian đăng nhập cuối cùng (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
@@ -348,7 +347,7 @@ export class UsersController {
 
   // DELETE - Xóa user
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa người dùng theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiResponse({
