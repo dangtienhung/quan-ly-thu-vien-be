@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { BookGradeLevelsService } from './book-grade-levels.service';
@@ -30,7 +29,7 @@ import { BookGradeLevel } from './entities/book-grade-level.entity';
 @ApiTags('Book Grade Levels - Liên kết Sách - Khối lớp')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// @Roles('admin')
 @Controller('book-grade-levels')
 export class BookGradeLevelsController {
   constructor(private readonly service: BookGradeLevelsService) {}

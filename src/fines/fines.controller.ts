@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -40,7 +39,7 @@ export class FinesController {
   constructor(private readonly finesService: FinesService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo bản ghi phạt mới (Admin)' })
   @ApiBody({
     type: CreateFineDto,
@@ -59,7 +58,7 @@ export class FinesController {
   }
 
   @Post('overdue/:borrowId')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo phạt tự động cho sách trễ hạn (Admin)' })
   @ApiParam({ name: 'borrowId', description: 'UUID của bản ghi mượn sách' })
   @ApiBody({
@@ -350,7 +349,7 @@ export class FinesController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật bản ghi phạt theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi phạt' })
   @ApiBody({
@@ -373,7 +372,7 @@ export class FinesController {
   }
 
   @Patch(':id/pay')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Thanh toán phạt (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi phạt' })
   @ApiBody({
@@ -422,7 +421,7 @@ export class FinesController {
   }
 
   @Patch(':id/waive')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Miễn phạt (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi phạt' })
   @ApiBody({
@@ -454,7 +453,7 @@ export class FinesController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa bản ghi phạt theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của bản ghi phạt' })
   @ApiResponse({ status: 204, description: 'Xóa bản ghi phạt thành công.' })

@@ -1,0 +1,73 @@
+### Test API Gửi Thông Báo Nhắc Nhở Đến Hạn Trả Sách
+
+# 1. Lấy danh sách sách gần đến hạn (trong vòng 2 ngày)
+GET http://localhost:3000/api/borrow-records/near-due?page=1&limit=10&daysBeforeDue=2
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 2. Lấy thống kê sách gần đến hạn
+GET http://localhost:3000/api/borrow-records/stats/near-due?daysBeforeDue=2
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 3. Gửi thông báo nhắc nhở cho tất cả độc giả (mặc định 2 ngày)
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 2,
+  "customMessage": "Sách của bạn sắp đến hạn trả trong 2 ngày tới. Vui lòng trả sách đúng hạn để tránh phí phạt."
+}
+
+###
+
+# 4. Gửi thông báo nhắc nhở cho 3 ngày trước
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 3,
+  "customMessage": "Nhắc nhở: Sách của bạn sẽ đến hạn trả trong 3 ngày tới. Hãy sắp xếp thời gian trả sách sớm."
+}
+
+###
+
+# 5. Gửi thông báo cho một độc giả cụ thể
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 2,
+  "readerId": "550e8400-e29b-41d4-a716-446655440000",
+  "customMessage": "Xin chào! Sách của bạn sắp đến hạn trả. Vui lòng liên hệ thư viện để trả sách."
+}
+
+###
+
+# 6. Gửi thông báo với nội dung mặc định
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 1
+}
+
+###
+
+# 7. Lấy danh sách sách gần đến hạn với 5 ngày
+GET http://localhost:3000/api/borrow-records/near-due?page=1&limit=20&daysBeforeDue=5
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 8. Lấy thống kê sách gần đến hạn với 5 ngày
+GET http://localhost:3000/api/borrow-records/stats/near-due?daysBeforeDue=5
+Authorization: Bearer {{jwt_token}}
+
+###

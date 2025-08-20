@@ -5,13 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Like, Repository } from 'typeorm';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
 import { CreateReaderDto } from './dto/create-reader.dto';
+import { ReadersQueryDto } from './dto/readers-query.dto';
 import { UpdateReaderDto } from './dto/update-reader.dto';
 import { Reader } from './entities/reader.entity';
 
@@ -53,14 +54,42 @@ export class ReadersService {
     return await this.readerRepository.save(reader);
   }
 
-  // READ ALL - Danh sách readers với pagination
-  async findAll(
-    paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<Reader>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+  // READ ALL - Danh sách readers với pagination và filter
+  async findAll(query: ReadersQueryDto): Promise<PaginatedResponseDto<Reader>> {
+    const {
+      page = 1,
+      limit = 10,
+      cardNumber,
+      cardExpiryDateFrom,
+      cardExpiryDateTo,
+      phone,
+    } = query;
     const skip = (page - 1) * limit;
 
+    // Xây dựng điều kiện lọc
+    const whereConditions: any = {};
+
+    if (cardNumber) {
+      whereConditions.cardNumber = Like(`%${cardNumber}%`);
+    }
+
+    if (phone) {
+      whereConditions.phone = Like(`%${phone}%`);
+    }
+
+    if (cardExpiryDateFrom || cardExpiryDateTo) {
+      const fromDate = cardExpiryDateFrom
+        ? new Date(cardExpiryDateFrom)
+        : new Date('1900-01-01');
+      const toDate = cardExpiryDateTo
+        ? new Date(cardExpiryDateTo)
+        : new Date('9999-12-31');
+      whereConditions.cardExpiryDate = Between(fromDate, toDate);
+    }
+
     const [data, totalItems] = await this.readerRepository.findAndCount({
+      where:
+        Object.keys(whereConditions).length > 0 ? whereConditions : undefined,
       relations: ['user', 'readerType'],
       order: { createdAt: 'DESC' },
       skip,

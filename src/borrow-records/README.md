@@ -95,29 +95,165 @@ GET /borrow-records/overdue
 - **Query Parameters**: Hỗ trợ phân trang
 - **Response**: 200 - Danh sách sách mượn quá hạn
 
-### 7. Lấy Thống Kê Mượn Sách
+### 7. Lấy Danh Sách Sách Gần Đến Hạn
+
+```http
+GET /borrow-records/near-due
+```
+
+- **Mô tả**: Lấy danh sách sách mượn gần đến hạn trả (trong vòng N ngày)
+- **Query Parameters**:
+  - page: Số trang (mặc định: 1)
+  - limit: Số lượng mỗi trang (mặc định: 10)
+  - daysBeforeDue: Số ngày trước khi đến hạn (mặc định: 2)
+- **Response**: 200 - Danh sách sách gần đến hạn trả
+
+### 8. Gửi Thông Báo Nhắc Nhở
+
+```http
+POST /borrow-records/send-reminders
+```
+
+- **Mô tả**: Gửi thông báo nhắc nhở cho người dùng sắp đến hạn trả sách
+- **Body**: SendNotificationDto
+  - daysBeforeDue: Số ngày trước khi đến hạn (mặc định: 2)
+  - customMessage: Nội dung thông báo tùy chỉnh
+  - readerId: ID độc giả cụ thể (nếu không có sẽ gửi cho tất cả)
+- **Response**: 200 - Kết quả gửi thông báo
+- **Ví dụ**:
+  ```json
+  {
+    "daysBeforeDue": 2,
+    "customMessage": "Sách của bạn sắp đến hạn trả trong 2 ngày tới.",
+    "readerId": "550e8400-e29b-41d4-a716-446655440000"
+  }
+  ```
+
+### 9. Lấy Thống Kê Sách Gần Đến Hạn
+
+```http
+GET /borrow-records/stats/near-due
+```
+
+- **Mô tả**: Lấy thống kê chi tiết về sách gần đến hạn trả
+- **Query Parameters**:
+  - daysBeforeDue: Số ngày trước khi đến hạn (mặc định: 2)
+- **Response**: 200 - Thống kê sách gần đến hạn
+
+### 10. Lấy Danh Sách Yêu Cầu Chờ Phê Duyệt
+
+```http
+GET /borrow-records/pending-approval
+```
+
+- **Mô tả**: Lấy danh sách yêu cầu mượn sách đang chờ phê duyệt
+- **Query Parameters**: Hỗ trợ phân trang
+- **Response**: 200 - Danh sách yêu cầu chờ phê duyệt
+
+### 8. Lấy Thống Kê Mượn Sách
 
 ```http
 GET /borrow-records/stats
 ```
 
-- **Mô tả**: Lấy thống kê tổng quan về mượn sách
+- **Mô tả**: Lấy thống kê tổng quan về mượn sách với phân tích chi tiết
 - **Response**: 200 - Thống kê chi tiết
+
+### 9. Lấy Thống Kê Quá Hạn Chi Tiết
+
+```http
+GET /borrow-records/stats/overdue
+```
+
+- **Mô tả**: Lấy thống kê chi tiết về sách quá hạn
+- **Response**: 200 - Thống kê quá hạn chi tiết
   ```json
   {
-    "total": 150,
-    "borrowed": 45,
-    "returned": 95,
-    "overdue": 8,
-    "renewed": 2,
-    "byMonth": [
-      { "month": "2024-01", "count": 25 },
-      { "month": "2024-02", "count": 30 }
+    "totalOverdue": 15,
+    "byStatus": [
+      { "status": "overdue", "count": 3 },
+      { "status": "borrowed", "count": 8 },
+      { "status": "renewed", "count": 4 }
+    ],
+    "byDaysOverdue": [
+      { "daysOverdue": 1, "count": 5 },
+      { "daysOverdue": 2, "count": 3 },
+      { "daysOverdue": 7, "count": 2 },
+      { "daysOverdue": 30, "count": 5 }
+    ],
+    "byReaderType": [
+      { "readerType": "Sinh viên", "count": 10 },
+      { "readerType": "Giảng viên", "count": 3 },
+      { "readerType": "Nhân viên", "count": 2 }
     ]
   }
   ```
 
-### 8. Lấy Thông Tin Bản Ghi Mượn Sách
+### 10. Cập Nhật Trạng Thái Quá Hạn Tự Động
+
+```http
+POST /borrow-records/update-overdue-status
+```
+
+- **Mô tả**: Cập nhật trạng thái quá hạn tự động cho các sách có due_date < now (chỉ Admin)
+- **Response**: 200 - Kết quả cập nhật
+  ```json
+  {
+    "updatedCount": 5
+  }
+  ```
+- **Lỗi**: 403 - Không có quyền truy cập
+  ```json
+  {
+    "total": 150,
+    "byStatus": [
+      { "status": "pending_approval", "count": 5 },
+      { "status": "borrowed", "count": 45 },
+      { "status": "returned", "count": 95 },
+      { "status": "overdue", "count": 3 },
+      { "status": "renewed", "count": 2 }
+    ],
+    "pendingApproval": 5,
+    "borrowed": 45,
+    "returned": 95,
+    "overdue": 3,
+    "renewed": 2,
+    "activeLoans": 47,
+    "overdueLoans": 8,
+    "byMonth": [
+      { "month": "2024-01", "count": 25 },
+      { "month": "2024-02", "count": 30 }
+    ],
+    "byReaderType": [
+      { "readerType": "Sinh viên", "count": 80 },
+      { "readerType": "Giảng viên", "count": 45 },
+      { "readerType": "Nhân viên", "count": 25 }
+    ],
+    "byBookCategory": [
+      { "category": "Công nghệ thông tin", "count": 50 },
+      { "category": "Kinh tế", "count": 35 },
+      { "category": "Văn học", "count": 30 },
+      { "category": "Khoa học", "count": 35 }
+    ]
+  }
+  ```
+
+**Giải thích các trường thống kê:**
+
+- **total**: Tổng số bản ghi mượn sách
+- **byStatus**: Thống kê chi tiết theo từng trạng thái
+- **pendingApproval**: Số yêu cầu chờ phê duyệt
+- **borrowed**: Số sách đang được mượn (trạng thái borrowed)
+- **returned**: Số sách đã trả
+- **overdue**: Số sách có trạng thái quá hạn
+- **renewed**: Số sách đã gia hạn
+- **activeLoans**: Số sách đang được mượn (bao gồm cả borrowed và renewed)
+- **overdueLoans**: Số sách quá hạn thực tế (bao gồm cả overdue và các sách có due_date < now)
+- **byMonth**: Thống kê theo tháng (6 tháng gần nhất)
+- **byReaderType**: Thống kê theo loại độc giả
+- **byBookCategory**: Thống kê theo danh mục sách
+
+### 11. Lấy Thông Tin Bản Ghi Mượn Sách
 
 ```http
 GET /borrow-records/:id
@@ -127,7 +263,7 @@ GET /borrow-records/:id
 - **Response**: 200 - Thông tin chi tiết bản ghi mượn sách
 - **Lỗi**: 404 - Không tìm thấy bản ghi mượn sách
 
-### 9. Cập Nhật Bản Ghi Mượn Sách
+### 12. Cập Nhật Bản Ghi Mượn Sách
 
 ```http
 PATCH /borrow-records/:id
@@ -141,7 +277,35 @@ PATCH /borrow-records/:id
   - 400: Dữ liệu không hợp lệ
   - 403: Không có quyền truy cập
 
-### 10. Trả Sách
+### 13. Phê Duyệt Yêu Cầu Mượn Sách
+
+```http
+PATCH /borrow-records/:id/approve
+```
+
+- **Mô tả**: Phê duyệt yêu cầu mượn sách (chỉ Admin)
+- **Body**: { librarianId: string, notes?: string }
+- **Response**: 200 - Thông tin bản ghi sau khi phê duyệt
+- **Lỗi**:
+  - 400: Yêu cầu không ở trạng thái chờ phê duyệt
+  - 404: Không tìm thấy bản ghi mượn sách
+  - 403: Không có quyền truy cập
+
+### 14. Từ Chối Yêu Cầu Mượn Sách
+
+```http
+PATCH /borrow-records/:id/reject
+```
+
+- **Mô tả**: Từ chối yêu cầu mượn sách (chỉ Admin)
+- **Body**: { librarianId: string, reason: string }
+- **Response**: 200 - Thông tin bản ghi sau khi từ chối
+- **Lỗi**:
+  - 400: Yêu cầu không ở trạng thái chờ phê duyệt
+  - 404: Không tìm thấy bản ghi mượn sách
+  - 403: Không có quyền truy cập
+
+### 15. Trả Sách
 
 ```http
 PATCH /borrow-records/:id/return
@@ -155,7 +319,7 @@ PATCH /borrow-records/:id/return
   - 404: Không tìm thấy bản ghi mượn sách
   - 403: Không có quyền truy cập
 
-### 11. Gia Hạn Sách
+### 16. Gia Hạn Sách
 
 ```http
 PATCH /borrow-records/:id/renew
@@ -169,7 +333,7 @@ PATCH /borrow-records/:id/renew
   - 404: Không tìm thấy bản ghi mượn sách
   - 403: Không có quyền truy cập
 
-### 12. Xóa Bản Ghi Mượn Sách
+### 14. Xóa Bản Ghi Mượn Sách
 
 ```http
 DELETE /borrow-records/:id
@@ -205,7 +369,7 @@ DELETE /borrow-records/:id
 
 1. **Tạo Bản Ghi Mượn Sách**
    - Tự động tạo ngày mượn và ngày hạn
-   - Mặc định trạng thái 'borrowed'
+   - Mặc định trạng thái 'pending_approval'
    - Số lần gia hạn mặc định là 0
 
 2. **Trả Sách**
@@ -219,12 +383,19 @@ DELETE /borrow-records/:id
    - Tự động cập nhật số lần gia hạn
 
 4. **Quản Lý Trạng Thái**
+   - pending_approval: Chờ phê duyệt
    - borrowed: Đang mượn
    - returned: Đã trả
    - overdue: Quá hạn
    - renewed: Đã gia hạn
 
-5. **Tự Động Cập Nhật Quá Hạn**
+5. **Quy Trình Phê Duyệt**
+   - Yêu cầu mượn sách mới tạo có trạng thái 'pending_approval'
+   - Admin có thể phê duyệt hoặc từ chối yêu cầu
+   - Khi phê duyệt: chuyển sang trạng thái 'borrowed'
+   - Khi từ chối: chuyển sang trạng thái 'returned' với ghi chú lý do từ chối
+
+6. **Tự Động Cập Nhật Quá Hạn**
    - Hệ thống tự động cập nhật trạng thái quá hạn
    - Dựa trên ngày hạn và trạng thái hiện tại
 

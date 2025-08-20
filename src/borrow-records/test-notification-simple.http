@@ -1,0 +1,62 @@
+### Test API Thông Báo Đơn Giản
+
+# 1. Gửi thông báo nhắc nhở cho tất cả độc giả (2 ngày trước)
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 2,
+  "customMessage": "Sách của bạn sắp đến hạn trả trong 2 ngày tới. Vui lòng trả sách đúng hạn."
+}
+
+###
+
+# 2. Gửi thông báo cho một độc giả cụ thể
+POST http://localhost:3000/api/borrow-records/send-reminders
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "daysBeforeDue": 3,
+  "readerId": "550e8400-e29b-41d4-a716-446655440000",
+  "customMessage": "Xin chào! Sách của bạn sắp đến hạn trả."
+}
+
+###
+
+# 3. Lấy danh sách thông báo của độc giả
+GET http://localhost:3000/api/notifications/reader/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 4. Lấy số thông báo chưa đọc của độc giả
+GET http://localhost:3000/api/notifications/reader/550e8400-e29b-41d4-a716-446655440000/unread-count
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 5. Đánh dấu một thông báo đã đọc
+PATCH http://localhost:3000/api/notifications/550e8400-e29b-41d4-a716-446655440000/read
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 6. Đánh dấu tất cả thông báo của độc giả đã đọc
+PATCH http://localhost:3000/api/notifications/reader/550e8400-e29b-41d4-a716-446655440000/read-all
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 7. Lấy danh sách sách gần đến hạn
+GET http://localhost:3000/api/borrow-records/near-due?daysBeforeDue=2&page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 8. Lấy thống kê sách gần đến hạn
+GET http://localhost:3000/api/borrow-records/stats/near-due?daysBeforeDue=2
+Authorization: Bearer {{jwt_token}}
+
+###

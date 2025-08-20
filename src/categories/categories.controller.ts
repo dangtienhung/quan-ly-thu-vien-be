@@ -19,7 +19,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -39,7 +38,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo mới thể loại (Admin)' })
   @ApiResponse({
     status: 201,
@@ -189,7 +188,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật thể loại theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của thể loại' })
   @ApiResponse({
@@ -208,7 +207,7 @@ export class CategoriesController {
   }
 
   @Patch('slug/:slug')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật thể loại theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của thể loại' })
   @ApiResponse({
@@ -227,7 +226,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa thể loại theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của thể loại' })
   @ApiResponse({ status: 204, description: 'Xóa thể loại thành công.' })
@@ -239,7 +238,7 @@ export class CategoriesController {
   }
 
   @Delete('slug/:slug')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa thể loại theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của thể loại' })
   @ApiResponse({ status: 204, description: 'Xóa thể loại thành công.' })

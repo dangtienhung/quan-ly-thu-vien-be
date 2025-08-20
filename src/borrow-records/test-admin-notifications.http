@@ -1,0 +1,73 @@
+### Test API Admin Quản Lý Thông Báo
+
+# 1. Lấy danh sách tất cả thông báo (Admin)
+GET http://localhost:3000/api/notifications?page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 2. Lấy danh sách thông báo với bộ lọc theo trạng thái
+GET http://localhost:3000/api/notifications?status=sent&page=1&limit=20
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 3. Lấy danh sách thông báo với bộ lọc theo loại
+GET http://localhost:3000/api/notifications?type=due_date_reminder&page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 4. Lấy danh sách thông báo của một độc giả cụ thể
+GET http://localhost:3000/api/notifications?readerId=550e8400-e29b-41d4-a716-446655440000&page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 5. Lấy danh sách thông báo theo khoảng thời gian
+GET http://localhost:3000/api/notifications?startDate=2024-12-01&endDate=2024-12-31&page=1&limit=20
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 6. Lấy thống kê thông báo (Admin)
+GET http://localhost:3000/api/notifications/stats
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 7. Lấy thống kê thông báo của một độc giả cụ thể
+GET http://localhost:3000/api/notifications/reader/550e8400-e29b-41d4-a716-446655440000/stats
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 8. Xóa một thông báo cụ thể
+DELETE http://localhost:3000/api/notifications/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 9. Xóa tất cả thông báo của một độc giả
+DELETE http://localhost:3000/api/notifications/reader/550e8400-e29b-41d4-a716-446655440000/clear-all
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 10. Lấy danh sách thông báo với nhiều bộ lọc kết hợp
+GET http://localhost:3000/api/notifications?status=sent&type=due_date_reminder&startDate=2024-12-01&page=1&limit=15
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 11. Lấy danh sách thông báo chưa đọc
+GET http://localhost:3000/api/notifications?status=sent&page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# 12. Lấy danh sách thông báo đã đọc
+GET http://localhost:3000/api/notifications?status=read&page=1&limit=10
+Authorization: Bearer {{jwt_token}}
+
+###

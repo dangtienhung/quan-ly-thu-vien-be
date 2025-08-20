@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -35,7 +34,7 @@ import { GradeLevelsService } from './grade-levels.service';
 @ApiTags('Grade Levels - Quản lý Khối lớp')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// @Roles('admin')
 @Controller('grade-levels')
 export class GradeLevelsController {
   constructor(private readonly gradeLevelsService: GradeLevelsService) {}

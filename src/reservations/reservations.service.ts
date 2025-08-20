@@ -14,6 +14,8 @@ import {
 } from '../common/dto/pagination.dto';
 import { PhysicalCopyService } from '../physical-copy/physical-copy.service';
 import { ReadersService } from '../readers/readers.service';
+import { CreateMultipleReservationsResponseDto } from './dto/create-multiple-reservations-response.dto';
+import { CreateMultipleReservationsDto } from './dto/create-multiple-reservations.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { Reservation, ReservationStatus } from './entities/reservation.entity';
@@ -87,6 +89,37 @@ export class ReservationsService {
     });
 
     return await this.reservationRepository.save(reservation);
+  }
+
+  // Tạo nhiều đặt trước cùng lúc
+  async createMultiple(
+    createMultipleReservationsDto: CreateMultipleReservationsDto,
+  ): Promise<CreateMultipleReservationsResponseDto> {
+    const { reservations } = createMultipleReservationsDto;
+    const created: Reservation[] = [];
+    const failed: Array<{ index: number; error: string; data: any }> = [];
+
+    // Xử lý từng đặt trước một cách tuần tự để đảm bảo tính nhất quán
+    for (let i = 0; i < reservations.length; i++) {
+      try {
+        const reservation = await this.create(reservations[i]);
+        created.push(reservation);
+      } catch (error) {
+        failed.push({
+          index: i,
+          error: error.message || 'Lỗi không xác định',
+          data: reservations[i],
+        });
+      }
+    }
+
+    return {
+      created,
+      failed,
+      total: reservations.length,
+      successCount: created.length,
+      failureCount: failed.length,
+    };
   }
 
   // Lấy tất cả đặt trước với phân trang

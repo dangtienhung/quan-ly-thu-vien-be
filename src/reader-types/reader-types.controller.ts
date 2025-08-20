@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -35,7 +34,7 @@ import { ReaderTypesService } from './reader-types.service';
 @ApiTags('Reader Types')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// // @Roles('admin')
 @Controller('reader-types')
 export class ReaderTypesController {
   constructor(private readonly readerTypesService: ReaderTypesService) {}

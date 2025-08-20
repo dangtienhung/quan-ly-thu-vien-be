@@ -19,7 +19,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../common/decorators/roles.decorator';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
@@ -40,7 +39,7 @@ export class AuthorsController {
   constructor(private readonly authorsService: AuthorsService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo mới tác giả (Admin)' })
   @ApiResponse({
     status: 201,
@@ -55,7 +54,7 @@ export class AuthorsController {
   }
 
   @Post('bulk')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Tạo nhiều tác giả cùng lúc (Admin)' })
   @ApiResponse({
     status: 201,
@@ -180,7 +179,7 @@ export class AuthorsController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật tác giả theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của tác giả' })
   @ApiResponse({
@@ -199,7 +198,7 @@ export class AuthorsController {
   }
 
   @Patch('slug/:slug')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Cập nhật tác giả theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của tác giả' })
   @ApiResponse({
@@ -218,7 +217,7 @@ export class AuthorsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa tác giả theo ID (Admin)' })
   @ApiParam({ name: 'id', description: 'UUID của tác giả' })
   @ApiResponse({ status: 204, description: 'Xóa tác giả thành công.' })
@@ -230,7 +229,7 @@ export class AuthorsController {
   }
 
   @Delete('slug/:slug')
-  @Roles('admin')
+  // @Roles('admin')
   @ApiOperation({ summary: 'Xóa tác giả theo slug (Admin)' })
   @ApiParam({ name: 'slug', description: 'Slug của tác giả' })
   @ApiResponse({ status: 204, description: 'Xóa tác giả thành công.' })
