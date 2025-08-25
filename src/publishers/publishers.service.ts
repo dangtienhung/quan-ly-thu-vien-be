@@ -13,6 +13,7 @@ import {
 } from '../common/dto/pagination.dto';
 import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
+import { FilterPublishersDto } from './dto/filter-publishers.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
 
@@ -111,16 +112,28 @@ export class PublishersService {
 
   // Lấy tất cả nhà xuất bản với phân trang
   async findAll(
-    paginationQuery: PaginationQueryDto,
+    filterQuery: FilterPublishersDto,
   ): Promise<PaginatedResponseDto<Publisher>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, search } = filterQuery;
     const skip = (page - 1) * limit;
 
-    const [data, totalItems] = await this.publisherRepository.findAndCount({
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Tạo query builder để hỗ trợ search
+    const queryBuilder =
+      this.publisherRepository.createQueryBuilder('publisher');
+
+    // Thêm điều kiện search nếu có
+    if (search) {
+      queryBuilder.where(
+        '(publisher.publisherName ILIKE :search OR publisher.address ILIKE :search OR publisher.email ILIKE :search OR publisher.phone ILIKE :search OR publisher.country ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [data, totalItems] = await queryBuilder
+      .orderBy('publisher.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;

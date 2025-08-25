@@ -1,0 +1,36 @@
+### Test Expire Reservation APIs
+
+### 1. Đánh dấu một đặt trước hết hạn
+PATCH http://localhost:8002/api/reservations/{{reservationId}}/expire
+Content-Type: application/json
+
+{
+  "librarianId": "550e8400-e29b-41d4-a716-446655440000",
+  "reason": "Độc giả không đến nhận sách"
+}
+
+### 2. Đánh dấu nhiều đặt trước hết hạn
+POST http://localhost:8002/api/reservations/bulk-expire
+Content-Type: application/json
+
+{
+  "reservationIds": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001"
+  ],
+  "librarianId": "550e8400-e29b-41d4-a716-446655440000",
+  "reason": "Độc giả không đến nhận sách"
+}
+
+### 3. Tự động đánh dấu tất cả đặt trước hết hạn
+POST http://localhost:8002/api/reservations/auto-expire-expired
+Content-Type: application/json
+
+### 4. Lấy thống kê đặt trước theo trạng thái
+GET http://localhost:8002/api/reservations/stats/by-status
+
+### 5. Lấy danh sách đặt trước đã hết hạn
+GET http://localhost:8002/api/reservations/expired?page=1&limit=10
+
+### 6. Lấy danh sách đặt trước sắp hết hạn
+GET http://localhost:8002/api/reservations/expiring-soon?days=3

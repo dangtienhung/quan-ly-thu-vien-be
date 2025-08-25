@@ -1,14 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import slug from 'slug';
 import {
-  BeforeInsert,
-  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { ApiProperty } from '@nestjs/swagger';
+import slug from 'slug';
 
 @Entity('images')
 export class Image {
@@ -105,8 +104,7 @@ export class Image {
   updatedAt: Date;
 
   // Tự động tạo slug từ tên image gốc
-  @BeforeInsert()
-  @BeforeUpdate()
+  // Đã xóa @BeforeInsert và @BeforeUpdate để tránh xung đột với service
   generateSlug() {
     if (this.originalName) {
       // Loại bỏ phần mở rộng image trước khi tạo slug

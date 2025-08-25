@@ -25,6 +25,8 @@ import {
 import { CreateMultipleReservationsResponseDto } from './dto/create-multiple-reservations-response.dto';
 import { CreateMultipleReservationsDto } from './dto/create-multiple-reservations.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { ExpireMultipleReservationsDto } from './dto/expire-multiple-reservations.dto';
+import { ExpireReservationDto } from './dto/expire-reservation.dto';
 import { FindByBookDto } from './dto/find-by-book.dto';
 import { FindByReaderDto } from './dto/find-by-reader.dto';
 import { FindByStatusDto } from './dto/find-by-status.dto';
@@ -429,6 +431,145 @@ export class ReservationsController {
     );
   }
 
+  @Patch(':id/expire')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Đánh dấu đặt trước hết hạn (Admin)' })
+  @ApiParam({ name: 'id', description: 'UUID của đặt trước' })
+  @ApiBody({
+    type: ExpireReservationDto,
+    description: 'Thông tin đánh dấu hết hạn đặt trước',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đánh dấu hết hạn đặt trước thành công.',
+    type: Reservation,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Không thể đánh dấu hết hạn đặt trước này.',
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy đặt trước.' })
+  async expireReservation(
+    @Param('id') id: string,
+    @Body() expireReservationDto: ExpireReservationDto,
+  ): Promise<Reservation> {
+    return this.reservationsService.expireReservation(
+      id,
+      expireReservationDto.librarianId,
+      expireReservationDto.reason,
+    );
+  }
+
+  @Post('bulk-expire')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Đánh dấu nhiều đặt trước hết hạn (Admin)' })
+  @ApiBody({
+    type: ExpireMultipleReservationsDto,
+    description: 'Danh sách các đặt trước cần đánh dấu hết hạn',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đánh dấu nhiều đặt trước hết hạn thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Danh sách ID đặt trước đã đánh dấu hết hạn thành công',
+        },
+        failed: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'ID đặt trước' },
+              error: { type: 'string', description: 'Lỗi' },
+            },
+          },
+          description: 'Danh sách ID đặt trước đánh dấu hết hạn thất bại',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  async expireMultipleReservations(
+    @Body() expireMultipleReservationsDto: ExpireMultipleReservationsDto,
+  ): Promise<{ success: string[]; failed: { id: string; error: string }[] }> {
+    return await this.reservationsService.expireMultipleReservations(
+      expireMultipleReservationsDto.reservationIds,
+      expireMultipleReservationsDto.librarianId,
+      expireMultipleReservationsDto.reason,
+    );
+  }
+
+  @Get('stats/by-status')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Thống kê số lượng reservations theo status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê theo status thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        total: {
+          type: 'number',
+          description: 'Tổng số reservations',
+        },
+        byStatus: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              status: {
+                type: 'string',
+                description: 'Trạng thái reservation',
+                enum: ['pending', 'fulfilled', 'cancelled', 'expired'],
+              },
+              count: {
+                type: 'number',
+                description: 'Số lượng reservations theo status',
+              },
+            },
+          },
+        },
+        pending: {
+          type: 'number',
+          description: 'Số lượng reservations đang chờ',
+        },
+        fulfilled: {
+          type: 'number',
+          description: 'Số lượng reservations đã thực hiện',
+        },
+        cancelled: {
+          type: 'number',
+          description: 'Số lượng reservations đã hủy',
+        },
+        expired: {
+          type: 'number',
+          description: 'Số lượng reservations hết hạn',
+        },
+        expiringSoon: {
+          type: 'number',
+          description: 'Số lượng reservations sắp hết hạn (1 ngày tới)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  async getStatsByStatus(): Promise<{
+    total: number;
+    byStatus: { status: string; count: number }[];
+    pending: number;
+    fulfilled: number;
+    cancelled: number;
+    expired: number;
+    expiringSoon: number;
+  }> {
+    return this.reservationsService.getStatsByStatus();
+  }
+
   @Post('auto-cancel-expired')
   // @Roles('admin')
   @ApiOperation({ summary: 'Tự động hủy đặt trước hết hạn (Admin)' })
@@ -450,6 +591,29 @@ export class ReservationsController {
     const cancelledCount =
       await this.reservationsService.autoCancelExpiredReservations();
     return { cancelledCount };
+  }
+
+  @Post('auto-expire-expired')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Tự động đánh dấu đặt trước hết hạn (Admin)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tự động đánh dấu đặt trước hết hạn thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        expiredCount: {
+          type: 'number',
+          description: 'Số lượng đặt trước đã đánh dấu hết hạn',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  async autoExpireExpiredReservations(): Promise<{ expiredCount: number }> {
+    const expiredCount =
+      await this.reservationsService.autoExpireExpiredReservations();
+    return { expiredCount };
   }
 
   @Delete(':id')

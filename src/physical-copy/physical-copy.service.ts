@@ -331,10 +331,6 @@ export class PhysicalCopyService {
       skip,
       take: limit,
     });
-    console.log(
-      '🚀 ~ PhysicalCopyService ~ findAvailableByBookId ~ data:',
-      data,
-    );
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;

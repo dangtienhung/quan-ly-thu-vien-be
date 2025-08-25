@@ -51,6 +51,10 @@ export class ReadersService {
     }
 
     const reader = this.readerRepository.create(createReaderDto);
+    console.log(
+      '🚀 ~ ReadersService ~ create ~ createReaderDto:',
+      createReaderDto,
+    );
     return await this.readerRepository.save(reader);
   }
 

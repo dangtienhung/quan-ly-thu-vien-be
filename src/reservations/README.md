@@ -1,483 +1,259 @@
-# 📚 Module Reservations - Quản lý Đặt trước
+# 📚 Module Reservations - Quản lý Đặt trước Sách
 
-## 📋 Tổng quan
+## 🎯 Tổng quan
 
-Module Reservations quản lý hệ thống đặt trước sách trong thư viện, cho phép độc giả đặt trước sách khi chưa có sẵn và thủ thư quản lý quy trình thực hiện đặt trước.
+Module Reservations được thiết kế để quản lý việc đặt trước sách trong hệ thống thư viện. Module này hỗ trợ:
 
-## 🔐 Xác thực và Phân quyền
-
-### **Vai trò được phép:**
-
-- **Reader**: Tạo đặt trước, xem đặt trước của mình
-- **Admin**: Tất cả quyền (thực hiện, hủy, quản lý đặt trước)
-
-### **Endpoints yêu cầu quyền Admin:**
-
-- `PATCH /reservations/:id` - Cập nhật đặt trước
-- `PATCH /reservations/:id/fulfill` - Thực hiện đặt trước
-- `PATCH /reservations/:id/cancel` - Hủy đặt trước
-- `POST /reservations/auto-cancel-expired` - Tự động hủy hết hạn
-- `DELETE /reservations/:id` - Xóa đặt trước
+- ✅ **Tạo đặt trước** với validation nghiêm ngặt
+- ✅ **Quản lý trạng thái** đặt trước (pending, fulfilled, cancelled, expired)
+- ✅ **Tự động hết hạn** đặt trước
+- ✅ **Thống kê** và báo cáo
+- ✅ **Tìm kiếm** và lọc đặt trước
+- ✅ **Bulk operations** cho nhiều đặt trước
 
 ## 🚀 API Endpoints
 
-### **1. Tạo đặt trước mới**
+### **Quản lý Đặt trước**
 
+#### 1. **Tạo đặt trước mới**
 ```http
-POST /reservations
+POST /api/reservations
+```
+
+#### 2. **Tạo nhiều đặt trước cùng lúc**
+```http
+POST /api/reservations/bulk
+```
+
+#### 3. **Lấy danh sách đặt trước**
+```http
+GET /api/reservations?page=1&limit=10
+```
+
+#### 4. **Tìm kiếm đặt trước**
+```http
+GET /api/reservations/search?q=từ khóa
+```
+
+### **Quản lý Trạng thái**
+
+#### 5. **Thực hiện đặt trước (Admin)**
+```http
+PATCH /api/reservations/{id}/fulfill
+```
+
+#### 6. **Hủy đặt trước (Admin)**
+```http
+PATCH /api/reservations/{id}/cancel
+```
+
+#### 7. **Đánh dấu đặt trước hết hạn (Admin)** ⭐ **MỚI**
+```http
+PATCH /api/reservations/{id}/expire
 ```
 
 **Request Body:**
-
-```json
-{
-  "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-  "book_id": "550e8400-e29b-41d4-a716-446655440000",
-  "reservation_date": "2024-01-01T10:00:00.000Z",
-  "expiry_date": "2024-01-08T10:00:00.000Z",
-  "reader_notes": "Cần sách này cho nghiên cứu",
-  "priority": 1
-}
-```
-
-**Response (201):**
-
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-  "book_id": "550e8400-e29b-41d4-a716-446655440000",
-  "reservation_date": "2024-01-01T10:00:00.000Z",
-  "expiry_date": "2024-01-08T10:00:00.000Z",
-  "status": "pending",
-  "reader_notes": "Cần sách này cho nghiên cứu",
-  "priority": 1,
-  "created_at": "2024-01-01T00:00:00.000Z",
-  "updated_at": "2024-01-01T00:00:00.000Z"
-}
-```
-
-### **2. Tạo nhiều đặt trước cùng lúc**
-
-```http
-POST /reservations/bulk
-```
-
-**Request Body:**
-
-```json
-{
-  "reservations": [
-    {
-      "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-      "book_id": "550e8400-e29b-41d4-a716-446655440001",
-      "reservation_date": "2024-01-01T10:00:00.000Z",
-      "expiry_date": "2024-01-08T10:00:00.000Z",
-      "reader_notes": "Cần sách này cho nghiên cứu",
-      "priority": 1
-    },
-    {
-      "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-      "book_id": "550e8400-e29b-41d4-a716-446655440002",
-      "reservation_date": "2024-01-01T10:00:00.000Z",
-      "expiry_date": "2024-01-08T10:00:00.000Z",
-      "reader_notes": "Sách tham khảo cho luận văn",
-      "priority": 2
-    }
-  ]
-}
-```
-
-**Response (201):**
-
-```json
-{
-  "created": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-      "book_id": "550e8400-e29b-41d4-a716-446655440001",
-      "reservation_date": "2024-01-01T10:00:00.000Z",
-      "expiry_date": "2024-01-08T10:00:00.000Z",
-      "status": "pending",
-      "reader_notes": "Cần sách này cho nghiên cứu",
-      "priority": 1,
-      "created_at": "2024-01-01T00:00:00.000Z",
-      "updated_at": "2024-01-01T00:00:00.000Z"
-    }
-  ],
-  "failed": [
-    {
-      "index": 1,
-      "error": "Độc giả đã đặt trước sách này",
-      "data": {
-        "reader_id": "550e8400-e29b-41d4-a716-446655440000",
-        "book_id": "550e8400-e29b-41d4-a716-446655440002"
-      }
-    }
-  ],
-  "total": 2,
-  "successCount": 1,
-  "failureCount": 1
-}
-```
-
-### **3. Lấy danh sách đặt trước**
-
-```http
-GET /reservations?page=1&limit=10
-```
-
-**Response (200):**
-
-```json
-{
-  "data": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "reader": {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "fullName": "Nguyễn Văn A"
-      },
-      "book": {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "title": "Sách mẫu"
-      },
-      "status": "pending",
-      "reservation_date": "2024-01-01T10:00:00.000Z",
-      "expiry_date": "2024-01-08T10:00:00.000Z"
-    }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "totalItems": 50,
-    "totalPages": 5,
-    "hasNextPage": true,
-    "hasPreviousPage": false
-  }
-}
-```
-
-### **4. Tìm kiếm đặt trước**
-
-```http
-GET /reservations/search?q=Nguyễn Văn A&page=1&limit=10
-```
-
-### **5. Lọc theo trạng thái**
-
-```http
-GET /reservations/status/pending?page=1&limit=10
-```
-
-### **6. Lọc theo độc giả**
-
-```http
-GET /reservations/reader/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
-```
-
-### **7. Lọc theo sách**
-
-```http
-GET /reservations/book/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
-```
-
-### **8. Đặt trước sắp hết hạn**
-
-```http
-GET /reservations/expiring-soon?days=3
-```
-
-### **9. Đặt trước đã hết hạn**
-
-```http
-GET /reservations/expired?page=1&limit=10
-```
-
-### **10. Thống kê đặt trước**
-
-```http
-GET /reservations/stats
-```
-
-**Response (200):**
-
-```json
-{
-  "total": 150,
-  "pending": 45,
-  "fulfilled": 80,
-  "cancelled": 15,
-  "expired": 10,
-  "byStatus": [
-    { "status": "pending", "count": 45 },
-    { "status": "fulfilled", "count": 80 },
-    { "status": "cancelled", "count": 15 },
-    { "status": "expired", "count": 10 }
-  ],
-  "byMonth": [
-    { "month": "2024-01", "count": 25 },
-    { "month": "2024-02", "count": 30 }
-  ],
-  "expiringSoon": 8
-}
-```
-
-### **11. Thực hiện đặt trước (Admin)**
-
-```http
-PATCH /reservations/550e8400-e29b-41d4-a716-446655440000/fulfill
-```
-
-**Request Body:**
-
 ```json
 {
   "librarianId": "550e8400-e29b-41d4-a716-446655440000",
-  "notes": "Sách đã sẵn sàng cho độc giả"
+  "reason": "Độc giả không đến nhận sách"
 }
 ```
 
-### **12. Hủy đặt trước (Admin)**
-
+#### 8. **Đánh dấu nhiều đặt trước hết hạn (Admin)** ⭐ **MỚI**
 ```http
-PATCH /reservations/550e8400-e29b-41d4-a716-446655440000/cancel
+POST /api/reservations/bulk-expire
 ```
 
 **Request Body:**
-
 ```json
 {
+  "reservationIds": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001"
+  ],
   "librarianId": "550e8400-e29b-41d4-a716-446655440000",
-  "reason": "Sách không còn sẵn"
+  "reason": "Độc giả không đến nhận sách"
 }
 ```
 
-### **13. Tự động hủy hết hạn (Admin)**
-
+#### 9. **Tự động đánh dấu đặt trước hết hạn (Admin)** ⭐ **MỚI**
 ```http
-POST /reservations/auto-cancel-expired
+POST /api/reservations/auto-expire-expired
 ```
 
-**Response (200):**
+### **Truy vấn và Lọc**
 
-```json
-{
-  "cancelledCount": 5
-}
+#### 10. **Lấy đặt trước theo trạng thái**
+```http
+GET /api/reservations/status/{status}?page=1&limit=10
 ```
 
-## 📊 Trạng thái Đặt trước
+#### 11. **Lấy đặt trước theo độc giả**
+```http
+GET /api/reservations/reader/{readerId}?page=1&limit=10
+```
 
-### **ReservationStatus Enum:**
+#### 12. **Lấy đặt trước theo sách**
+```http
+GET /api/reservations/book/{bookId}?page=1&limit=10
+```
 
-- `pending`: Đang chờ xử lý
-- `fulfilled`: Đã thực hiện
-- `cancelled`: Đã hủy
-- `expired`: Đã hết hạn
+#### 13. **Lấy đặt trước sắp hết hạn**
+```http
+GET /api/reservations/expiring-soon?days=3
+```
 
-## ✅ Quy tắc Nghiệp vụ
+#### 14. **Lấy đặt trước đã hết hạn**
+```http
+GET /api/reservations/expired?page=1&limit=10
+```
 
-### **1. Tạo đặt trước:**
+### **Thống kê**
 
-- ✅ Độc giả phải đang hoạt động
-- ✅ Sách phải tồn tại trong hệ thống
-- ✅ Không được đặt trước trùng lặp (cùng độc giả, cùng sách, trạng thái pending)
-- ✅ Ngày hết hạn phải sau ngày đặt trước
-- ✅ Tự động tính thứ tự ưu tiên nếu không được chỉ định
+#### 15. **Thống kê tổng quan**
+```http
+GET /api/reservations/stats
+```
 
-### **2. Tạo nhiều đặt trước cùng lúc:**
+#### 16. **Thống kê theo trạng thái**
+```http
+GET /api/reservations/stats/by-status
+```
 
-- ✅ Xử lý từng đặt trước tuần tự để đảm bảo tính nhất quán
-- ✅ Trả về kết quả chi tiết cho từng đặt trước (thành công/thất bại)
-- ✅ Tiếp tục xử lý các đặt trước khác nếu một đặt trước thất bại
-- ✅ Báo cáo tổng quan về số lượng thành công và thất bại
-- ✅ Áp dụng tất cả quy tắc validation của tạo đặt trước đơn lẻ
+## 🔧 Business Logic
 
-### **3. Thực hiện đặt trước:**
+### **Trạng thái Đặt trước**
 
-- ✅ Chỉ có thể thực hiện đặt trước đang chờ xử lý
-- ✅ Phải có sách sẵn sàng (available copies)
-- ✅ Tự động cập nhật ngày thực hiện và thủ thư thực hiện
+- **PENDING**: Đang chờ xử lý
+- **FULFILLED**: Đã thực hiện
+- **CANCELLED**: Đã hủy
+- **EXPIRED**: Đã hết hạn
 
-### **4. Hủy đặt trước:**
+### **Validation Rules**
 
-- ✅ Chỉ có thể hủy đặt trước đang chờ xử lý
-- ✅ Tự động cập nhật ngày hủy và thủ thư hủy
-- ✅ Có thể ghi chú lý do hủy
+1. **Tạo đặt trước:**
+   - Độc giả phải đang hoạt động
+   - Không được đặt trước trùng lặp
+   - Ngày hết hạn phải sau ngày đặt trước
 
-### **5. Tự động hủy hết hạn:**
+2. **Thực hiện đặt trước:**
+   - Chỉ có thể thực hiện đặt trước đang chờ
+   - Cần ID thủ thư thực hiện
 
-- ✅ Chỉ hủy đặt trước có trạng thái pending
-- ✅ Tự động cập nhật lý do hủy
-- ✅ Trả về số lượng đã hủy
+3. **Hủy đặt trước:**
+   - Chỉ có thể hủy đặt trước đang chờ
+   - Cần ID thủ thư hủy và lý do
 
-## 🔍 Tính năng Tìm kiếm
+4. **Đánh dấu hết hạn:** ⭐ **MỚI**
+   - Có thể đánh dấu đặt trước đang chờ hoặc đã hủy
+   - Không thể đánh dấu đặt trước đã thực hiện
+   - Cần ID thủ thư và lý do (optional)
 
-### **Tìm kiếm theo:**
-
-- Tên độc giả
-- Tên sách
-- Ghi chú của độc giả
-- Ghi chú của thủ thư
-
-### **Lọc theo:**
-
-- Trạng thái đặt trước
-- Độc giả
-- Sách
-- Thời gian hết hạn
-
-## 📈 Thống kê và Báo cáo
-
-### **Thống kê tổng quan:**
-
-- Tổng số đặt trước
-- Số lượng theo từng trạng thái
-- Số đặt trước sắp hết hạn (3 ngày tới)
-
-### **Thống kê theo thời gian:**
-
-- Thống kê theo tháng (6 tháng gần nhất)
-- Phân tích xu hướng đặt trước
-
-## ⚡ Tối ưu Hiệu suất
-
-### **Database Indexes:**
+## 📊 Database Schema
 
 ```sql
--- Indexes cho performance
-CREATE INDEX idx_reservations_status ON reservations(status);
-CREATE INDEX idx_reservations_reader_id ON reservations(reader_id);
-CREATE INDEX idx_reservations_book_id ON reservations(book_id);
-CREATE INDEX idx_reservations_expiry_date ON reservations(expiry_date);
-CREATE INDEX idx_reservations_priority ON reservations(book_id, priority);
+CREATE TABLE reservations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reader_id UUID NOT NULL REFERENCES readers(id) ON DELETE CASCADE,
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  physical_copy_id UUID REFERENCES physical_copies(id) ON DELETE SET NULL,
+  reservation_date TIMESTAMP NOT NULL,
+  expiry_date TIMESTAMP NOT NULL,
+  status ENUM('pending', 'fulfilled', 'cancelled', 'expired') DEFAULT 'pending',
+  reader_notes TEXT,
+  librarian_notes TEXT,
+  fulfillment_date TIMESTAMP,
+  fulfilled_by UUID,
+  cancelled_date TIMESTAMP,
+  cancellation_reason TEXT,
+  cancelled_by UUID,
+  priority INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-### **Query Optimization:**
+## 🧪 Testing
 
-- Sử dụng pagination cho tất cả danh sách
-- Eager loading cho relations (reader, book)
-- Efficient filtering và sorting
+### **Test với cURL**
 
-## 🔄 Tích hợp với Module khác
+```bash
+# Đánh dấu một đặt trước hết hạn
+curl -X PATCH "http://localhost:8002/api/reservations/550e8400-e29b-41d4-a716-446655440000/expire" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "librarianId": "550e8400-e29b-41d4-a716-446655440000",
+    "reason": "Độc giả không đến nhận sách"
+  }'
 
-### **BooksModule:**
+# Đánh dấu nhiều đặt trước hết hạn
+curl -X POST "http://localhost:8002/api/reservations/bulk-expire" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reservationIds": ["550e8400-e29b-41d4-a716-446655440000"],
+    "librarianId": "550e8400-e29b-41d4-a716-446655440000",
+    "reason": "Độc giả không đến nhận sách"
+  }'
 
-- Kiểm tra sách tồn tại khi tạo đặt trước
-- Lấy thông tin sách cho hiển thị
+# Tự động đánh dấu tất cả đặt trước hết hạn
+curl -X POST "http://localhost:8002/api/reservations/auto-expire-expired"
+```
 
-### **ReadersModule:**
+### **Test với Swagger UI**
 
-- Kiểm tra độc giả hoạt động
-- Lấy thông tin độc giả cho hiển thị
+1. Truy cập: `http://localhost:8002/api`
+2. Tìm section "Reservations - Quản lý Đặt trước"
+3. Test các endpoint trực tiếp
 
-### **PhysicalCopyModule:**
+## ⚠️ Error Handling
 
-- Kiểm tra sách sẵn sàng khi thực hiện đặt trước
-- Cập nhật trạng thái copy khi thực hiện
+### **Common Errors**
 
-## 🚀 Tính năng Nâng cao
+#### **400 Bad Request**
+```json
+{
+  "statusCode": 400,
+  "message": "Đặt trước đã hết hạn"
+}
+```
 
-### **1. Thứ tự ưu tiên:**
+```json
+{
+  "statusCode": 400,
+  "message": "Không thể đánh dấu hết hạn cho đặt trước đã thực hiện"
+}
+```
 
-- Tự động tính thứ tự ưu tiên theo thời gian đặt trước
-- Hỗ trợ chỉ định thứ tự ưu tiên thủ công
+#### **404 Not Found**
+```json
+{
+  "statusCode": 404,
+  "message": "Không tìm thấy đặt trước với ID {id}"
+}
+```
 
-### **2. Ghi chú và Tracking:**
+## 🔄 Integration
 
-- Ghi chú của độc giả khi đặt trước
-- Ghi chú của thủ thư khi thực hiện/hủy
-- Tracking đầy đủ người thực hiện và thời gian
+Module Reservations tích hợp với:
 
-### **3. Tự động hóa:**
+- **Readers**: Kiểm tra độc giả hoạt động
+- **Books**: Kiểm tra sách tồn tại
+- **PhysicalCopies**: Quản lý bản sao vật lý
+- **Users**: Thủ thư thực hiện/hủy đặt trước
 
-- Tự động hủy đặt trước hết hạn
-- Thông báo đặt trước sắp hết hạn
-- Tích hợp với hệ thống thông báo
+## 📈 Performance Considerations
 
-## 📝 Validation Rules
+- **Indexes** cho các trường thường query
+- **Pagination** cho danh sách lớn
+- **Bulk operations** cho hiệu suất cao
+- **Auto-expire** với batch processing
 
-### **CreateReservationDto:**
+---
 
-- `reader_id`: UUID hợp lệ, bắt buộc
-- `book_id`: UUID hợp lệ, bắt buộc
-- `reservation_date`: Định dạng ngày hợp lệ, bắt buộc
-- `expiry_date`: Định dạng ngày hợp lệ, bắt buộc, phải sau reservation_date
-- `reader_notes`: Tối đa 500 ký tự, tùy chọn
-- `priority`: Số nguyên > 0, tùy chọn
+## 📝 Changelog
 
-### **CreateMultipleReservationsDto:**
-
-- `reservations`: Mảng các CreateReservationDto, bắt buộc
-- Phải có ít nhất 1 đặt trước trong mảng
-- Mỗi phần tử trong mảng phải tuân thủ validation rules của CreateReservationDto
-
-### **UpdateReservationDto:**
-
-- Kế thừa tất cả rules từ CreateReservationDto
-- `status`: Enum ReservationStatus, tùy chọn
-- `librarian_notes`: Tối đa 500 ký tự, tùy chọn
-- `fulfillment_date`: Định dạng ngày hợp lệ, tùy chọn
-- `fulfilled_by`: UUID hợp lệ, tùy chọn
-- `cancelled_date`: Định dạng ngày hợp lệ, tùy chọn
-- `cancellation_reason`: Tối đa 500 ký tự, tùy chọn
-- `cancelled_by`: UUID hợp lệ, tùy chọn
-
-## 🔧 Monitoring và Logging
-
-### **Key Metrics:**
-
-- Số lượng đặt trước mới mỗi ngày
-- Tỷ lệ đặt trước được thực hiện
-- Thời gian trung bình từ đặt trước đến thực hiện
-- Số lượng đặt trước hết hạn
-
-### **Error Tracking:**
-
-- Lỗi validation
-- Lỗi business logic
-- Lỗi database operations
-
-## 🚀 Roadmap
-
-### **Phase 1 - Core Features:**
-
-- ✅ CRUD operations
-- ✅ Status management
-- ✅ Search và filtering
-- ✅ Statistics
-
-### **Phase 2 - Advanced Features:**
-
-- 📋 Email notifications
-- 📋 SMS reminders
-- 📋 Auto-fulfillment khi có sách
-- 📋 Reservation queue management
-
-### **Phase 3 - Enterprise Features:**
-
-- 📋 Multi-library support
-- 📋 Advanced analytics
-- 📋 Integration với external systems
-- 📋 Mobile app support
-
-## 📞 Hỗ trợ
-
-**Module Version**: 1.0
-**Last Updated**: 2024-01-01
-**Dependencies**: BooksModule, ReadersModule, PhysicalCopyModule
-
-**Access Points:**
-
-- Swagger UI: `/api#/Reservations`
-- Base URL: `/reservations`
-
-**Performance Targets:**
-
-- Search Response: < 200ms
-- Create Reservation: < 500ms
-- Create Multiple Reservations: < 2s (cho 10 đặt trước)
-- Statistics Generation: < 1s
-- Concurrent Reservations: 50+
+- `2024-01-01`: Khởi tạo module Reservations
+- `2024-01-01`: Thêm API expire reservations ⭐ **MỚI**
+- `2024-01-01`: Thêm bulk expire operations ⭐ **MỚI**
+- `2024-01-01`: Thêm auto-expire functionality ⭐ **MỚI**

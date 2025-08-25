@@ -45,6 +45,13 @@ export class ReservationsService {
     // Kiểm tra sách có tồn tại không
     await this.booksService.findOne(createReservationDto.book_id);
 
+    // Kiểm tra physical copy có tồn tại không (nếu được cung cấp)
+    if (createReservationDto.physical_copy_id) {
+      await this.physicalCopyService.findOne(
+        createReservationDto.physical_copy_id,
+      );
+    }
+
     // Kiểm tra độc giả đã đặt trước sách này chưa
     const existingReservation = await this.reservationRepository.findOne({
       where: {
@@ -82,6 +89,7 @@ export class ReservationsService {
     const reservation = this.reservationRepository.create({
       reader_id: createReservationDto.reader_id,
       book_id: createReservationDto.book_id,
+      physical_copy_id: createReservationDto.physical_copy_id,
       reservation_date: reservationDate,
       expiry_date: expiryDate,
       reader_notes: createReservationDto.reader_notes,
@@ -130,7 +138,7 @@ export class ReservationsService {
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -156,7 +164,7 @@ export class ReservationsService {
   async findOne(id: string): Promise<Reservation> {
     const reservation = await this.reservationRepository.findOne({
       where: { id },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
     });
 
     if (!reservation) {
@@ -215,7 +223,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { status },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -247,7 +255,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { reader_id: readerId },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -279,7 +287,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { book_id: bookId },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { priority: 'ASC', created_at: 'ASC' },
       skip,
       take: limit,
@@ -302,7 +310,7 @@ export class ReservationsService {
   }
 
   // Lấy đặt trước sắp hết hạn
-  async findExpiringSoon(days: number = 3): Promise<Reservation[]> {
+  async findExpiringSoon(days: number = 1): Promise<Reservation[]> {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + days);
 
@@ -311,7 +319,7 @@ export class ReservationsService {
         status: ReservationStatus.PENDING,
         expiry_date: MoreThan(new Date()),
       },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { expiry_date: 'ASC' },
     });
   }
@@ -328,7 +336,7 @@ export class ReservationsService {
         status: ReservationStatus.PENDING,
         expiry_date: LessThan(new Date()),
       },
-      relations: ['reader', 'book'],
+      relations: ['reader', 'book', 'physicalCopy'],
       order: { expiry_date: 'ASC' },
       skip,
       take: limit,
@@ -395,18 +403,18 @@ export class ReservationsService {
     }
 
     // Kiểm tra sách có sẵn không
-    const availableCopies = await this.physicalCopyService.findPhysicalCopies(
-      reservation.book_id,
-      { page: 1, limit: 100 },
-    );
-    const hasAvailable = availableCopies.data.some(
-      (copy) => copy.status === 'available',
-    );
-    if (!hasAvailable) {
-      throw new BadRequestException(
-        'Sách hiện không có sẵn để thực hiện đặt trước',
-      );
-    }
+    // const availableCopies = await this.physicalCopyService.findPhysicalCopies(
+    //   reservation.book_id,
+    //   { page: 1, limit: 100 },
+    // );
+    // const hasAvailable = availableCopies.data.some(
+    //   (copy) => copy.status === 'available',
+    // );
+    // if (!hasAvailable) {
+    //   throw new BadRequestException(
+    //     'Sách hiện không có sẵn để thực hiện đặt trước',
+    //   );
+    // }
 
     reservation.status = ReservationStatus.FULFILLED;
     reservation.fulfillment_date = new Date();
@@ -440,6 +448,62 @@ export class ReservationsService {
     return await this.reservationRepository.save(reservation);
   }
 
+  // Đánh dấu đặt trước hết hạn
+  async expireReservation(
+    id: string,
+    librarianId: string,
+    reason?: string,
+  ): Promise<Reservation> {
+    const reservation = await this.findOne(id);
+
+    if (reservation.status === ReservationStatus.EXPIRED) {
+      throw new BadRequestException('Đặt trước đã hết hạn');
+    }
+
+    if (reservation.status === ReservationStatus.FULFILLED) {
+      throw new BadRequestException(
+        'Không thể đánh dấu hết hạn cho đặt trước đã thực hiện',
+      );
+    }
+
+    reservation.status = ReservationStatus.EXPIRED;
+    reservation.cancelled_date = new Date();
+    reservation.cancelled_by = librarianId;
+    if (reason) {
+      reservation.cancellation_reason = reason;
+    } else {
+      reservation.cancellation_reason = 'Đánh dấu hết hạn bởi thủ thư';
+    }
+
+    return await this.reservationRepository.save(reservation);
+  }
+
+  // Đánh dấu nhiều đặt trước hết hạn
+  async expireMultipleReservations(
+    reservationIds: string[],
+    librarianId: string,
+    reason?: string,
+  ): Promise<{ success: string[]; failed: { id: string; error: string }[] }> {
+    const results = {
+      success: [] as string[],
+      failed: [] as { id: string; error: string }[],
+    };
+
+    for (const id of reservationIds) {
+      try {
+        await this.expireReservation(id, librarianId, reason);
+        results.success.push(id);
+      } catch (error) {
+        results.failed.push({
+          id,
+          error: error.message || 'Lỗi không xác định',
+        });
+      }
+    }
+
+    return results;
+  }
+
   // Tự động hủy đặt trước hết hạn
   async autoCancelExpiredReservations(): Promise<number> {
     const expiredReservations = await this.reservationRepository.find({
@@ -453,6 +517,28 @@ export class ReservationsService {
       reservation.status = ReservationStatus.EXPIRED;
       reservation.cancelled_date = new Date();
       reservation.cancellation_reason = 'Tự động hủy do hết hạn';
+    }
+
+    if (expiredReservations.length > 0) {
+      await this.reservationRepository.save(expiredReservations);
+    }
+
+    return expiredReservations.length;
+  }
+
+  // Tự động đánh dấu đặt trước hết hạn
+  async autoExpireExpiredReservations(): Promise<number> {
+    const expiredReservations = await this.reservationRepository.find({
+      where: {
+        status: ReservationStatus.PENDING,
+        expiry_date: LessThan(new Date()),
+      },
+    });
+
+    for (const reservation of expiredReservations) {
+      reservation.status = ReservationStatus.EXPIRED;
+      reservation.cancelled_date = new Date();
+      reservation.cancellation_reason = 'Tự động đánh dấu hết hạn';
     }
 
     if (expiredReservations.length > 0) {
@@ -523,7 +609,7 @@ export class ReservationsService {
       });
     }
 
-    // Số đặt trước sắp hết hạn (3 ngày tới)
+    // Số đặt trước sắp hết hạn (1 ngày tới)
     const expiringSoon = await this.reservationRepository.count({
       where: {
         status: ReservationStatus.PENDING,
@@ -539,6 +625,59 @@ export class ReservationsService {
       expired,
       byStatus,
       byMonth,
+      expiringSoon,
+    };
+  }
+
+  // Lấy thống kê đặt trước theo status (tối ưu cho API)
+  async getStatsByStatus(): Promise<{
+    total: number;
+    byStatus: { status: string; count: number }[];
+    pending: number;
+    fulfilled: number;
+    cancelled: number;
+    expired: number;
+    expiringSoon: number;
+  }> {
+    const [total, pending, fulfilled, cancelled, expired] = await Promise.all([
+      this.reservationRepository.count(),
+      this.reservationRepository.count({
+        where: { status: ReservationStatus.PENDING },
+      }),
+      this.reservationRepository.count({
+        where: { status: ReservationStatus.FULFILLED },
+      }),
+      this.reservationRepository.count({
+        where: { status: ReservationStatus.CANCELLED },
+      }),
+      this.reservationRepository.count({
+        where: { status: ReservationStatus.EXPIRED },
+      }),
+    ]);
+
+    // Thống kê theo trạng thái
+    const byStatus = [
+      { status: 'pending', count: pending },
+      { status: 'fulfilled', count: fulfilled },
+      { status: 'cancelled', count: cancelled },
+      { status: 'expired', count: expired },
+    ];
+
+    // Số đặt trước sắp hết hạn (1 ngày tới)
+    const expiringSoon = await this.reservationRepository.count({
+      where: {
+        status: ReservationStatus.PENDING,
+        expiry_date: MoreThan(new Date()),
+      },
+    });
+
+    return {
+      total,
+      byStatus,
+      pending,
+      fulfilled,
+      cancelled,
+      expired,
       expiringSoon,
     };
   }

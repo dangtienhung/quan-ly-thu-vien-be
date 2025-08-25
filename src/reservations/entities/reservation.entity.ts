@@ -10,6 +10,7 @@ import {
 
 import { ApiProperty } from '@nestjs/swagger';
 import { Book } from '../../books/entities/book.entity';
+import { PhysicalCopy } from '../../physical-copy/entities/physical-copy.entity';
 import { Reader } from '../../readers/entities/reader.entity';
 
 export enum ReservationStatus {
@@ -49,6 +50,18 @@ export class Reservation {
   @ManyToOne(() => Book, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'book_id' })
   book: Book;
+
+  @ApiProperty({
+    description: 'ID của bản sao vật lý (optional)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @Column({ type: 'uuid', nullable: true })
+  physical_copy_id?: string;
+
+  @ManyToOne(() => PhysicalCopy, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'physical_copy_id' })
+  physicalCopy?: PhysicalCopy;
 
   @ApiProperty({
     description: 'Ngày đặt trước',

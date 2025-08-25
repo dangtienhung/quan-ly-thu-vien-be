@@ -268,6 +268,37 @@ export class BorrowRecordsService {
     return { data, meta };
   }
 
+  // Lấy bản ghi mượn sách đã bị hủy
+  async findCancelled(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<BorrowRecord>> {
+    const { page = 1, limit = 10 } = paginationQuery;
+    const skip = (page - 1) * limit;
+
+    const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
+      where: { status: BorrowStatus.CANCELLED },
+      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
+      order: { created_at: 'DESC' }, // Sắp xếp theo thời gian tạo mới nhất
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    const meta: PaginationMetaDto = {
+      page,
+      limit,
+      totalItems,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+    };
+
+    return { data, meta };
+  }
+
   // Phê duyệt yêu cầu mượn sách
   async approveBorrowRequest(
     id: string,
@@ -306,10 +337,9 @@ export class BorrowRecordsService {
       );
     }
 
-    // Cập nhật trạng thái thành RETURNED (coi như đã trả)
-    borrowRecord.status = BorrowStatus.RETURNED;
+    // Cập nhật trạng thái thành CANCELLED
+    borrowRecord.status = BorrowStatus.CANCELLED;
     borrowRecord.librarian_id = librarianId;
-    borrowRecord.return_date = new Date();
     borrowRecord.return_notes = `Yêu cầu bị từ chối: ${reason}`;
 
     return await this.borrowRecordRepository.save(borrowRecord);
@@ -400,6 +430,7 @@ export class BorrowRecordsService {
     returned: number;
     overdue: number;
     renewed: number;
+    cancelled: number;
     activeLoans: number;
     overdueLoans: number;
     byMonth: { month: string; count: number }[];
@@ -442,6 +473,10 @@ export class BorrowRecordsService {
 
       const renewed = await this.borrowRecordRepository.count({
         where: { status: BorrowStatus.RENEWED },
+      });
+
+      const cancelled = await this.borrowRecordRepository.count({
+        where: { status: BorrowStatus.CANCELLED },
       });
 
       // Sách đang được mượn (bao gồm cả BORROWED và RENEWED)
@@ -541,6 +576,7 @@ export class BorrowRecordsService {
         returned,
         overdue,
         renewed,
+        cancelled,
         activeLoans,
         overdueLoans,
         byMonth,

@@ -19,6 +19,7 @@ export enum BorrowStatus {
   RETURNED = 'returned',
   OVERDUE = 'overdue',
   RENEWED = 'renewed',
+  CANCELLED = 'cancelled',
 }
 
 @Entity('borrow_records')

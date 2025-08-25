@@ -48,15 +48,32 @@ export class UsersService {
   async findAll(
     filterQuery: FilterUsersDto,
   ): Promise<PaginatedResponseDto<User>> {
-    const { page = 1, limit = 10, type } = filterQuery;
+    const { page = 1, limit = 10, type, search } = filterQuery;
     const skip = (page - 1) * limit;
 
-    // Tạo query builder để hỗ trợ lọc theo type
+    // Tạo query builder để hỗ trợ lọc theo type và search
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 
     // Thêm điều kiện lọc theo type nếu có
     if (type) {
       queryBuilder.where('user.role = :role', { role: type });
+    }
+
+    // Thêm điều kiện search nếu có
+    if (search) {
+      if (type) {
+        // Nếu có cả type và search, sử dụng andWhere
+        queryBuilder.andWhere(
+          '(user.username ILIKE :search OR user.email ILIKE :search OR user.userCode ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      } else {
+        // Nếu chỉ có search, sử dụng where
+        queryBuilder.where(
+          '(user.username ILIKE :search OR user.email ILIKE :search OR user.userCode ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
     }
 
     const [data, totalItems] = await queryBuilder
@@ -83,7 +100,6 @@ export class UsersService {
 
   // READ ONE - Tìm user theo ID
   async findOne(id: string): Promise<User> {
-    console.log('🚀 ~ UsersService ~ findOne ~ id:', id);
     const user = await this.userRepository.findOne({
       where: { id },
       // relations: ['reader'], // TODO: Uncomment when Reader entity relationships are stable

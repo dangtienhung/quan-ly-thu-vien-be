@@ -197,12 +197,34 @@ export class ImagesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa image theo ID' })
-  @ApiParam({ name: 'id', description: 'UUID của image' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của image cần xóa',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @ApiResponse({ status: 204, description: 'Xóa image thành công.' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy image.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy image với ID này.' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.imagesService.remove(id);
+  }
+
+  @Post('cleanup-duplicates')
+  @ApiOperation({ summary: 'Kiểm tra và xóa duplicate records' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cleanup duplicates thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        deleted: { type: 'number', description: 'Số records đã xóa' },
+        message: { type: 'string', description: 'Thông báo kết quả' },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async cleanupDuplicates(): Promise<{ deleted: number; message: string }> {
+    return this.imagesService.cleanupDuplicates();
   }
 
   @Delete('slug/:slug')

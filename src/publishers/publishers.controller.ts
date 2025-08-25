@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
+import { FilterPublishersDto } from './dto/filter-publishers.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
 import { PublishersService } from './publishers.service';
@@ -152,14 +153,19 @@ export class PublishersController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Tìm kiếm theo tên, địa chỉ, email, điện thoại hoặc quốc gia',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách nhà xuất bản thành công.',
   })
   async findAll(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() filterQuery: FilterPublishersDto,
   ): Promise<PaginatedResponseDto<Publisher>> {
-    return this.publishersService.findAll(paginationQuery);
+    return this.publishersService.findAll(filterQuery);
   }
 
   @Get('search')

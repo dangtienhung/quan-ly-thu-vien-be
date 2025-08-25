@@ -1,6 +1,7 @@
+import { ArrayMinSize, IsArray, ValidateNested } from 'class-validator';
+
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, ValidateNested } from 'class-validator';
 import { CreateReservationDto } from './create-reservation.dto';
 
 export class CreateMultipleReservationsDto {
@@ -11,6 +12,7 @@ export class CreateMultipleReservationsDto {
       {
         reader_id: '550e8400-e29b-41d4-a716-446655440000',
         book_id: '550e8400-e29b-41d4-a716-446655440001',
+        physical_copy_id: '550e8400-e29b-41d4-a716-446655440003',
         reservation_date: '2024-01-01T10:00:00.000Z',
         expiry_date: '2024-01-08T10:00:00.000Z',
         reader_notes: 'Cần sách này cho nghiên cứu',

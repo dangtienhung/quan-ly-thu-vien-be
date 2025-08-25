@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
@@ -13,4 +13,12 @@ export class FilterUsersDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(UserRole, { message: 'Type phải là reader hoặc admin' })
   type?: UserRole;
+
+  @ApiPropertyOptional({
+    description: 'Tìm kiếm theo email, username hoặc userCode',
+    example: 'nguyen_van_a',
+  })
+  @IsOptional()
+  @IsString({ message: 'Search phải là chuỗi ký tự' })
+  search?: string;
 }

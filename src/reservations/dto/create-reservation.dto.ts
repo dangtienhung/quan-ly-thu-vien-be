@@ -29,6 +29,15 @@ export class CreateReservationDto {
   book_id: string;
 
   @ApiProperty({
+    description: 'ID của bản sao vật lý (optional)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID bản sao vật lý phải là UUID hợp lệ' })
+  physical_copy_id?: string;
+
+  @ApiProperty({
     description: 'Ngày đặt trước',
     example: '2024-01-01T10:00:00.000Z',
   })
