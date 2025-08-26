@@ -21,6 +21,10 @@ import { CreatePhysicalCopyDto } from '../physical-copy/dto/create-physical-copy
 import { UpdatePhysicalCopyDto } from '../physical-copy/dto/update-physical-copy.dto';
 import { PhysicalCopy } from '../physical-copy/entities/physical-copy.entity';
 import { PublishersService } from '../publishers/publishers.service';
+import {
+  BookStatisticsResponseDto,
+  MainCategoryStatisticsDto,
+} from './dto/book-statistics.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { FindAllBooksDto } from './dto/find-all-books.dto';
 import { UpdateBookViewDto, ViewUpdateType } from './dto/update-book-view.dto';
@@ -113,6 +117,7 @@ export class BooksService {
     const {
       page = 1,
       limit = 10,
+      q,
       type,
       main_category_id,
       category_id,
@@ -128,6 +133,14 @@ export class BooksService {
       .orderBy('book.created_at', 'DESC')
       .skip(skip)
       .take(limit);
+
+    // Thêm điều kiện tìm kiếm theo q nếu có
+    if (q) {
+      queryBuilder.andWhere(
+        '(book.title ILIKE :query OR book.description ILIKE :query)',
+        { query: `%${q}%` },
+      );
+    }
 
     // Thêm điều kiện lọc theo type nếu có
     if (type) {
@@ -635,5 +648,106 @@ export class BooksService {
     );
 
     return booksWithAuthors;
+  }
+
+  // Thống kê sách theo thể loại
+  async getBookStatistics(): Promise<BookStatisticsResponseDto> {
+    try {
+      // Lấy tổng số sách
+      const totalBooks = await this.bookRepository.count();
+
+      // Lấy tổng số sách vật lý
+      const totalPhysicalBooks = await this.bookRepository.count({
+        where: { book_type: BookType.PHYSICAL },
+      });
+
+      // Lấy tổng số sách điện tử
+      const totalEbooks = await this.bookRepository.count({
+        where: { book_type: BookType.EBOOK },
+      });
+
+      // Lấy thống kê theo thể loại chính (main_category) - chỉ sách có main_category_id
+      const mainCategoryStats = await this.bookRepository
+        .createQueryBuilder('book')
+        .leftJoin('book.mainCategory', 'mainCategory')
+        .select([
+          'mainCategory.id as mainCategoryId',
+          'mainCategory.name as mainCategoryName',
+          'COUNT(book.id) as bookCount',
+          'SUM(CASE WHEN book.book_type = :physicalType THEN 1 ELSE 0 END) as physicalBookCount',
+          'SUM(CASE WHEN book.book_type = :ebookType THEN 1 ELSE 0 END) as ebookCount',
+        ])
+        .setParameter('physicalType', BookType.PHYSICAL)
+        .setParameter('ebookType', BookType.EBOOK)
+        .where('book.main_category_id IS NOT NULL')
+        .groupBy('mainCategory.id, mainCategory.name')
+        .orderBy('bookCount', 'DESC')
+        .getRawMany();
+
+      // Lấy thống kê cho sách không có main_category_id
+      const booksWithoutMainCategory = await this.bookRepository
+        .createQueryBuilder('book')
+        .select([
+          'COUNT(book.id) as bookCount',
+          'SUM(CASE WHEN book.book_type = :physicalType THEN 1 ELSE 0 END) as physicalBookCount',
+          'SUM(CASE WHEN book.book_type = :ebookType THEN 1 ELSE 0 END) as ebookCount',
+        ])
+        .setParameter('physicalType', BookType.PHYSICAL)
+        .setParameter('ebookType', BookType.EBOOK)
+        .where('book.main_category_id IS NULL')
+        .getRawOne();
+
+      console.log('Raw mainCategoryStats:', mainCategoryStats);
+
+      // Xử lý dữ liệu thống kê theo main category
+      const byMainCategory: MainCategoryStatisticsDto[] = mainCategoryStats
+        .filter((stat) => stat.bookCount && parseInt(stat.bookCount) > 0) // Lọc bỏ các record null
+        .map((stat) => ({
+          mainCategoryId: stat.mainCategoryId,
+          mainCategoryName: stat.mainCategoryName,
+          bookCount: parseInt(stat.bookCount),
+          physicalBookCount: parseInt(stat.physicalBookCount),
+          ebookCount: parseInt(stat.ebookCount),
+          percentage:
+            totalBooks > 0 ? (parseInt(stat.bookCount) / totalBooks) * 100 : 0,
+        }));
+
+      // Thêm thống kê cho sách không có main category (nếu có)
+      if (
+        booksWithoutMainCategory &&
+        parseInt(booksWithoutMainCategory.bookCount) > 0
+      ) {
+        byMainCategory.push({
+          mainCategoryId: 'no-category',
+          mainCategoryName: 'Chưa phân loại',
+          bookCount: parseInt(booksWithoutMainCategory.bookCount),
+          physicalBookCount: parseInt(
+            booksWithoutMainCategory.physicalBookCount,
+          ),
+          ebookCount: parseInt(booksWithoutMainCategory.ebookCount),
+          percentage:
+            totalBooks > 0
+              ? (parseInt(booksWithoutMainCategory.bookCount) / totalBooks) *
+                100
+              : 0,
+        });
+      }
+
+      return {
+        totalBooks,
+        totalPhysicalBooks,
+        totalEbooks,
+        byMainCategory,
+        byType: {
+          physical: totalPhysicalBooks,
+          ebook: totalEbooks,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getBookStatistics:', error);
+      throw new BadRequestException(
+        'Database operation failed: ' + error.message,
+      );
+    }
   }
 }

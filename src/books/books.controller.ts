@@ -27,6 +27,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { BooksService } from './books.service';
+import { BookStatisticsResponseDto } from './dto/book-statistics.dto';
 import { BookWithAuthorsDto } from './dto/book-with-authors.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { FindAllBooksDto } from './dto/find-all-books.dto';
@@ -70,7 +71,7 @@ export class BooksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách sách có phân trang' })
+  @ApiOperation({ summary: 'Lấy danh sách sách có phân trang và tìm kiếm' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -82,6 +83,12 @@ export class BooksController {
     required: false,
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Từ khóa tìm kiếm theo title và description',
   })
   @ApiQuery({
     name: 'type',
@@ -158,6 +165,18 @@ export class BooksController {
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<BookWithAuthors>> {
     return this.booksService.search(query, paginationQuery);
+  }
+
+  @Get('statistics')
+  @ApiOperation({ summary: 'Lấy thống kê sách theo thể loại chính' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê sách thành công.',
+    type: BookStatisticsResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Lỗi khi truy vấn cơ sở dữ liệu.' })
+  getBookStatistics(): Promise<BookStatisticsResponseDto> {
+    return this.booksService.getBookStatistics();
   }
 
   @Get('isbn/:isbn')
