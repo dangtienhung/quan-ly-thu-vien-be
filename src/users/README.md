@@ -1,341 +1,167 @@
-# 🔐 Hệ thống Xác thực (Authentication)
+# Users Module
 
-## 📋 Tổng quan
+Module quản lý người dùng trong hệ thống thư viện.
 
-Hệ thống xác thực được xây dựng với JWT (JSON Web Token) và Passport.js, cung cấp các tính năng:
+## Features
 
-- ✅ Đăng nhập với JWT token
-- ✅ Đổi mật khẩu
-- ✅ Quên mật khẩu và đặt lại mật khẩu
-- ✅ Kiểm tra trạng thái tài khoản
-- ✅ Bảo vệ API endpoints với JWT Guard
-- ✅ Thông báo lỗi song ngữ Việt-Anh
-- ✅ Tài liệu Swagger đầy đủ
-- ✅ Lọc danh sách users theo loại (reader/admin)
+- Tạo, đọc, cập nhật, xóa người dùng
+- Quản lý vai trò và trạng thái tài khoản
+- Xác thực và phân quyền
+- Import người dùng từ file Excel
+- Upload và đọc file Excel
 
-## 🛠️ Cấu hình
+## API Endpoints
 
-### Environment Variables (.env)
-
-```bash
-# JWT Configuration
-JWT_SECRET=dangtienhung      # Khóa bí mật cho JWT
-JWT_EXPIRES_IN=1d           # Thời gian token hết hạn (1 ngày)
+### 1. Tạo người dùng mới
+```
+POST /api/users
 ```
 
-## 📝 API Endpoints
-
-### 1. Đăng nhập
-
-```http
-POST /api/auth/login
+### 2. Lấy danh sách người dùng
+```
+GET /api/users?page=1&limit=10&type=reader&search=keyword
 ```
 
-**Request Body:**
+### 3. Lấy thông tin người dùng theo ID
+```
+GET /api/users/:id
+```
 
+### 4. Cập nhật người dùng
+```
+PATCH /api/users/:id
+```
+
+### 5. Xóa người dùng
+```
+DELETE /api/users/:id
+```
+
+### 6. Tạo nhiều người dùng cùng lúc (Bulk Import)
+```
+POST /api/users/bulk
+```
+
+### 7. Upload và đọc file Excel
+```
+POST /api/users/upload-excel
+```
+
+**Endpoint mới:** Upload file Excel để đọc nội dung và validate dữ liệu trước khi import.
+
+#### Request:
+- Method: `POST`
+- Content-Type: `multipart/form-data`
+- Body: Form data với field `file` chứa file Excel (.xlsx, .xls)
+- Authorization: Bearer token (JWT)
+
+#### Response:
 ```json
 {
-  "username": "string",
-  "password": "string"
-}
-```
-
-**Response:**
-
-```json
-{
-  "accessToken": "string",
-  "user": {
-    "id": "uuid",
-    "username": "string",
-    "email": "string",
-    "role": "admin | reader",
-    "accountStatus": "active | suspended | banned"
-  }
-}
-```
-
-### 2. Lấy thông tin người dùng hiện tại
-
-```http
-GET /api/users/me
-```
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response:**
-
-```json
-{
-  "id": "uuid",
-  "username": "string",
-  "email": "string",
-  "role": "reader",
-  "accountStatus": "active",
-  "lastLogin": "2024-01-01T10:30:00.000Z",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
-
-### 3. Lấy danh sách người dùng (Admin)
-
-```http
-GET /api/users?page=1&limit=10&type=reader
-```
-
-**Query Parameters:**
-
-- `page` (optional): Số trang (mặc định: 1)
-- `limit` (optional): Số lượng mỗi trang (mặc định: 10)
-- `type` (optional): Lọc theo loại người dùng (`reader` hoặc `admin`)
-
-**Ví dụ:**
-
-```http
-GET /api/users?type=reader          # Chỉ lấy danh sách độc giả
-GET /api/users?type=admin           # Chỉ lấy danh sách admin
-GET /api/users?page=2&limit=20      # Lấy trang 2, 20 items mỗi trang
-GET /api/users?type=reader&page=1&limit=5  # Lấy 5 độc giả đầu tiên
-```
-
-**Response:**
-
-```json
-{
+  "message": "File Excel đã được upload và đọc thành công",
+  "filename": "users.xlsx",
+  "size": 1024,
+  "totalRows": 2,
+  "validRows": 2,
+  "invalidRows": 0,
+  "errors": [
+    "Dòng 3: Thiếu email",
+    "Dòng 7: Email không hợp lệ"
+  ],
   "data": [
     {
-      "id": "uuid",
-      "username": "string",
-      "email": "string",
-      "role": "reader",
-      "accountStatus": "active",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "Mã": "SV001",
+      "Tên đăng nhập": "nguyen_van_a",
+      "Mật khẩu": "123456",
+      "Email": "nguyenvana@example.com",
+      "Vai trò": "học sinh",
+      "Trạng thái": "hoạt động",
+      "Ngày sinh": "15/06/1995",
+      "Giới tính": "male",
+      "Địa chỉ": "123 Đường ABC, Quận 1, TP.HCM",
+      "Số điện thoại": "0123456789",
+      "Loại độc giả": "học sinh",
+      "Ngày bắt đầu": "01/01/2024",
+      "Ngày kết thúc": "31/12/2025",
+      "_rowIndex": 2
     }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "totalItems": 50,
-    "totalPages": 5,
-    "hasNextPage": true,
-    "hasPreviousPage": false
-  }
+  ]
 }
 ```
 
-### 4. Đổi mật khẩu
+#### Tính năng:
+- ✅ Hỗ trợ file .xlsx và .xls
+- ✅ Tự động detect và parse các cột Excel
+- ✅ Validate dữ liệu theo DTO backend
+- ✅ Xử lý ngày tháng từ Excel
+- ✅ Báo cáo chi tiết số dòng hợp lệ/không hợp lệ
+- ✅ Liệt kê các lỗi validation với số dòng cụ thể
+- ✅ Giới hạn hiển thị tối đa 20 lỗi để tránh spam
 
-```http
-POST /api/auth/change-password
-```
+## Format Excel yêu cầu
 
-**Headers:** `Authorization: Bearer {token}`
+### Cột bắt buộc:
+| Tên cột | Mô tả | Ví dụ |
+|----------|--------|--------|
+| Mã | Mã người dùng | SV001 |
+| Tên đăng nhập | Username | nguyen_van_a |
+| Mật khẩu | Password (6-255 ký tự) | 123456 |
+| Email | Địa chỉ email | nguyenvana@example.com |
+| Vai trò | Vai trò trong hệ thống | học sinh, nhân viên, giáo viên |
+| Trạng thái | Trạng thái hoạt động | hoạt động, bị cấm |
+| Ngày sinh | Ngày sinh (dd/mm/yyyy) | 15/06/1995 |
+| Giới tính | Giới tính | male, female, other |
+| Địa chỉ | Địa chỉ nhà | 123 Đường ABC, Quận 1, TP.HCM |
+| Số điện thoại | Số điện thoại | 0123456789 |
+| Loại độc giả | Loại độc giả | học sinh, giáo viên, nhân viên |
+| Ngày bắt đầu | Ngày bắt đầu thẻ (dd/mm/yyyy) | 01/01/2024 |
+| Ngày kết thúc | Ngày kết thúc thẻ (dd/mm/yyyy) | 31/12/2025 |
 
-**Request Body:**
+### Giá trị enum được chấp nhận:
 
-```json
-{
-  "currentPassword": "string",
-  "newPassword": "string",
-  "confirmNewPassword": "string"
-}
-```
+#### Vai trò:
+- `học sinh`
+- `nhân viên`
+- `giáo viên`
 
-### 5. Quên mật khẩu
+#### Trạng thái:
+- `hoạt động`
+- `bị cấm`
 
-```http
-POST /api/auth/forgot-password
-```
+#### Giới tính:
+- `male`
+- `female`
+- `other`
 
-**Request Body:**
+#### Loại độc giả:
+- `học sinh`
+- `giáo viên`
+- `nhân viên`
 
-```json
-{
-  "email": "string"
-}
-```
+## Workflow Import
 
-### 6. Đặt lại mật khẩu
+1. **Upload Excel**: Sử dụng endpoint `/api/users/upload-excel` để upload file
+2. **Validate**: API sẽ tự động validate dữ liệu và trả về kết quả
+3. **Review**: Kiểm tra số dòng hợp lệ/không hợp lệ và các lỗi
+4. **Import**: Sử dụng endpoint `/api/users/bulk` để import dữ liệu đã validate
 
-```http
-POST /api/auth/reset-password
-```
+## Error Handling
 
-**Request Body:**
+API sẽ trả về các lỗi validation chi tiết:
+- Thiếu trường bắt buộc
+- Giá trị enum không hợp lệ
+- Độ dài mật khẩu không đúng
+- Định dạng ngày không hợp lệ
 
-```json
-{
-  "token": "string",
-  "newPassword": "string",
-  "confirmNewPassword": "string"
-}
-```
+## Security
 
-## 🔒 Bảo mật
+- Endpoint yêu cầu JWT authentication
+- Chỉ admin mới có quyền upload Excel
+- Validate file type và size
+- Sanitize dữ liệu đầu vào
 
-1. **Mật khẩu:**
-   - Được mã hóa với bcrypt
-   - Yêu cầu độ dài tối thiểu 8 ký tự
-   - Phải chứa chữ hoa, chữ thường và số
+## Dependencies
 
-2. **JWT Token:**
-   - Thời gian hết hạn: 1 ngày
-   - Được gửi qua Authorization header
-   - Tự động kiểm tra trạng thái tài khoản
-
-3. **Tài khoản:**
-   - Có 3 trạng thái: active, suspended, banned
-   - Tự động khóa sau nhiều lần đăng nhập thất bại
-   - Chỉ tài khoản active mới có thể đăng nhập
-
-## 🛡️ Guards và Decorators
-
-### JWT Guard
-
-```typescript
-@UseGuards(JwtAuthGuard)
-@Get('profile')
-getProfile(@Request() req) {
-  return req.user;
-}
-```
-
-### Role Guard (Coming soon)
-
-```typescript
-// @Roles('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Get('admin-only')
-adminEndpoint() {
-  return 'Only admins can see this';
-}
-```
-
-## 🔍 Validation
-
-### Login DTO
-
-```typescript
-export class LoginDto {
-  @IsNotEmpty({ message: 'Tên đăng nhập không được để trống' })
-  @IsString({ message: 'Tên đăng nhập phải là chuỗi ký tự' })
-  username: string;
-
-  @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
-  @IsString({ message: 'Mật khẩu phải là chuỗi ký tự' })
-  @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
-  password: string;
-}
-```
-
-### Filter Users DTO
-
-```typescript
-export class FilterUsersDto {
-  @IsOptional()
-  @IsEnum(UserRole, { message: 'Type phải là reader hoặc admin' })
-  type?: UserRole;
-}
-```
-
-### Change Password DTO
-
-```typescript
-export class ChangePasswordDto {
-  @IsNotEmpty({ message: 'Mật khẩu hiện tại không được để trống' })
-  currentPassword: string;
-
-  @IsNotEmpty({ message: 'Mật khẩu mới không được để trống' })
-  @MinLength(8, { message: 'Mật khẩu mới phải có ít nhất 8 ký tự' })
-  newPassword: string;
-
-  @IsNotEmpty({ message: 'Xác nhận mật khẩu không được để trống' })
-  @Match('newPassword', { message: 'Xác nhận mật khẩu không khớp' })
-  confirmNewPassword: string;
-}
-```
-
-## 📚 Swagger Documentation
-
-Truy cập `/api` để xem tài liệu API đầy đủ với:
-
-- Mô tả chi tiết các endpoints
-- Request/Response schemas
-- Authentication requirements
-- Test trực tiếp API
-- Thông báo lỗi tiếng Việt
-
-## 🔄 Quy trình Xác thực
-
-1. **Đăng nhập:**
-   - Client gửi username/password
-   - Server kiểm tra thông tin
-   - Nếu hợp lệ, tạo JWT token
-   - Trả về token và thông tin user
-
-2. **Sử dụng API:**
-   - Client gửi token trong header
-   - JWT Guard xác thực token
-   - Kiểm tra trạng thái tài khoản
-   - Cho phép/từ chối truy cập
-
-3. **Đổi mật khẩu:**
-   - Yêu cầu token hợp lệ
-   - Xác thực mật khẩu hiện tại
-   - Kiểm tra định dạng mật khẩu mới
-   - Cập nhật và mã hóa mật khẩu
-
-4. **Quên mật khẩu:**
-   - Gửi email xác thực
-   - Tạo token reset password
-   - Token có thời hạn giới hạn
-   - Xác thực token khi reset
-
-## 🐛 Xử lý Lỗi
-
-Tất cả lỗi authentication được xử lý tập trung và trả về format thống nhất:
-
-```json
-{
-  "statusCode": 401,
-  "message": "Thông tin đăng nhập không hợp lệ",
-  "error": "Unauthorized"
-}
-```
-
-Các mã lỗi phổ biến:
-
-- 401: Chưa đăng nhập hoặc token hết hạn
-- 403: Không có quyền truy cập
-- 404: Tài khoản không tồn tại
-- 422: Dữ liệu đầu vào không hợp lệ
-- 429: Quá nhiều yêu cầu đăng nhập thất bại
-
-## 🔜 Tính năng Sắp Tới
-
-1. **Role-based Access Control (RBAC)**
-   - Phân quyền chi tiết theo chức năng
-   - Quản lý nhóm quyền
-   - Kiểm tra quyền động
-
-2. **Two-Factor Authentication (2FA)**
-   - Xác thực qua email/SMS
-   - Mã OTP
-   - Backup codes
-
-3. **OAuth Integration**
-   - Đăng nhập qua Google
-   - Đăng nhập qua Facebook
-   - Đăng nhập qua GitHub
-
-4. **Session Management**
-   - Quản lý phiên đăng nhập
-   - Đăng xuất từ xa
-   - Theo dõi thiết bị
-
-5. **Security Enhancements**
-   - Rate limiting
-   - IP blocking
-   - CAPTCHA integration
+- `xlsx`: Đọc và parse file Excel
+- `@nestjs/platform-express`: File upload handling
+- `class-validator`: Validation DTO

@@ -10,11 +10,15 @@ import {
   Post,
   Query,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -26,10 +30,14 @@ import {
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CreateMultipleUsersResponseDto } from './dto/create-multiple-users-response.dto';
+import { CreateMultipleUsersDto } from './dto/create-multiple-users.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { FilterUsersDto } from './dto/filter-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UploadExcelResponseDto } from './dto/upload-excel.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
+import { ExcelService } from './excel.service';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -37,7 +45,10 @@ import { UsersService } from './users.service';
 // @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly excelService: ExcelService,
+  ) {}
 
   // CREATE - Tạo user mới
   @Post()
@@ -363,5 +374,98 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
+  }
+
+  // CREATE MULTIPLE - Tạo nhiều user cùng lúc
+  @Post('bulk')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Tạo nhiều người dùng cùng lúc (Admin)' })
+  @ApiBody({ type: CreateMultipleUsersDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo nhiều người dùng thành công.',
+    type: CreateMultipleUsersResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.CREATED)
+  async createMultiple(
+    @Body() createMultipleUsersDto: CreateMultipleUsersDto,
+  ): Promise<CreateMultipleUsersResponseDto> {
+    return this.usersService.createMultiple(createMultipleUsersDto);
+  }
+
+  // UPLOAD EXCEL - Upload Excel file
+  @Post('upload-excel')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload file Excel (Admin)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Upload file Excel thành công.',
+    type: UploadExcelResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.CREATED)
+  async uploadExcel(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UploadExcelResponseDto> {
+    return this.excelService.parseExcelFile(file);
+  }
+
+  // CREATE USERS FROM EXCEL - Tạo users từ dữ liệu Excel đã upload
+  @Post('create-from-excel')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Tạo users từ dữ liệu Excel đã upload (Admin)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        excelData: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              useCode: { type: 'string' },
+              username: { type: 'string' },
+              password: { type: 'string' },
+              email: { type: 'string' },
+              role: { type: 'string' },
+              accountStatus: { type: 'string' },
+              dob: { type: 'string' },
+              gender: { type: 'string' },
+              address: { type: 'string' },
+              phone: { type: 'string' },
+              readerType: { type: 'string' },
+              cardIssueDate: { type: 'string' },
+              cardExpriryDate: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo users từ Excel thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.CREATED)
+  async createUsersFromExcel(@Body() body: { excelData: any[] }): Promise<any> {
+    return this.excelService.createUsersFromExcel(body.excelData);
   }
 }

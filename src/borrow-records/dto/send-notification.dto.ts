@@ -1,17 +1,19 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SendNotificationDto {
   @ApiPropertyOptional({
-    description: 'Số ngày trước khi đến hạn để gửi thông báo (mặc định: 2)',
+    description:
+      'Số ngày trước khi đến hạn để gửi thông báo (mặc định: 2, 0 = gửi ngay)',
     example: 2,
-    minimum: 1,
-    maximum: 7,
+    minimum: 0,
+    maximum: 30,
   })
   @IsOptional()
   @IsNumber()
-  @Min(1)
-  @Max(7)
+  @Min(0)
+  @Max(30)
   daysBeforeDue?: number = 2;
 
   @ApiPropertyOptional({

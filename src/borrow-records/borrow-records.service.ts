@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThan, Repository } from 'typeorm';
+import { Between, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -787,15 +787,22 @@ export class BorrowRecordsService {
     const { daysBeforeDue = 2, customMessage, readerId } = notificationDto;
 
     const now = new Date();
-    const targetDate = new Date(
-      now.getTime() + daysBeforeDue * 24 * 60 * 60 * 1000,
-    );
 
-    // Xây dựng điều kiện where
+    // Xử lý trường hợp daysBeforeDue = 0 (gửi ngay cho tất cả sách đang mượn)
     const whereConditions: any = {
-      due_date: Between(now, targetDate),
       status: BorrowStatus.BORROWED,
     };
+
+    if (daysBeforeDue === 0) {
+      // Gửi cho tất cả sách đang mượn
+      whereConditions.due_date = MoreThanOrEqual(now);
+    } else {
+      // Gửi cho sách sắp đến hạn
+      const targetDate = new Date(
+        now.getTime() + daysBeforeDue * 24 * 60 * 60 * 1000,
+      );
+      whereConditions.due_date = Between(now, targetDate);
+    }
 
     // Nếu có readerId cụ thể
     if (readerId) {
@@ -843,7 +850,9 @@ export class BorrowRecordsService {
     // Tạo nội dung thông báo
     const defaultMessage =
       customMessage ||
-      `Sách của bạn sắp đến hạn trả trong ${daysBeforeDue} ngày tới. Vui lòng trả sách đúng hạn để tránh phí phạt.`;
+      (daysBeforeDue === 0
+        ? 'Nhắc nhở: Vui lòng kiểm tra sách đang mượn và trả sách đúng hạn để tránh phí phạt.'
+        : `Sách của bạn sắp đến hạn trả trong ${daysBeforeDue} ngày tới. Vui lòng trả sách đúng hạn để tránh phí phạt.`);
 
     // Tạo thông báo trong database cho từng độc giả
     let totalNotificationsSent = 0;
