@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { DataSource, IsNull, Not, QueryRunner, Repository } from 'typeorm';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -505,6 +505,43 @@ export class UsersService {
       .getOne();
 
     return lastCard ? lastCard.cardNumber : null;
+  }
+
+  // GET READER TYPES - Lấy danh sách loại độc giả
+  async getReaderTypes(): Promise<any> {
+    const readerTypes = await this.readerTypeRepository.find({
+      order: { typeName: 'ASC' },
+    });
+
+    return {
+      data: readerTypes,
+      total: readerTypes.length,
+    };
+  }
+
+  // FIND ALL USERS WITH USERCODE - Lấy tất cả users có userCode
+  async findAllWithUserCode(): Promise<User[]> {
+    return this.userRepository.find({
+      where: {
+        userCode: Not(IsNull()),
+      },
+    });
+  }
+
+  // FIND READER BY USER ID - Tìm reader theo userId
+  async findReaderByUserId(userId: string): Promise<Reader | null> {
+    return this.readerRepository.findOne({
+      where: { userId: userId },
+    });
+  }
+
+  // UPDATE READER CARD NUMBER - Cập nhật cardNumber của reader
+  async updateReaderCardNumber(
+    readerId: string,
+    cardNumber: string,
+  ): Promise<Reader | null> {
+    await this.readerRepository.update(readerId, { cardNumber });
+    return this.readerRepository.findOne({ where: { id: readerId } });
   }
 
   // Helper methods

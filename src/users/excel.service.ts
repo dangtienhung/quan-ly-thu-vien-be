@@ -143,7 +143,7 @@ export class ExcelService {
           gender: this.mapGenderToEnum(row['gender'] || 'male'),
           address: row['address'] || '',
           phone: row['phone'] || '',
-          cardNumber: await this.generateCardNumber(),
+          cardNumber: row['useCode'] || '',
           cardIssueDate: row['cardIssueDate']
             ? new Date(row['cardIssueDate'])
             : null,
@@ -195,6 +195,86 @@ export class ExcelService {
       errorCount,
       results,
     };
+  }
+
+  /**
+   * Sync userCode từ User sang cardNumber của Reader
+   */
+  async syncUserCodeToCardNumber(): Promise<any> {
+    try {
+      // Lấy tất cả users có userCode
+      const users = await this.usersService.findAllWithUserCode();
+
+      let successCount = 0;
+      let errorCount = 0;
+      const results: any[] = [];
+
+      for (const user of users) {
+        try {
+          // Tìm reader của user này
+          const reader = await this.usersService.findReaderByUserId(user.id);
+
+          if (reader) {
+            // Cập nhật cardNumber = userCode
+            if (user.userCode) {
+              await this.usersService.updateReaderCardNumber(
+                reader.id,
+                user.userCode,
+              );
+
+              results.push({
+                status: 'success',
+                userId: user.id,
+                userCode: user.userCode,
+                readerId: reader.id,
+                oldCardNumber: reader.cardNumber,
+                newCardNumber: user.userCode,
+              });
+
+              successCount++;
+            } else {
+              results.push({
+                status: 'error',
+                userId: user.id,
+                userCode: user.userCode,
+                error: 'User không có userCode',
+              });
+              errorCount++;
+            }
+          } else {
+            results.push({
+              status: 'error',
+              userId: user.id,
+              userCode: user.userCode,
+              error: 'Không tìm thấy reader cho user này',
+            });
+            errorCount++;
+          }
+        } catch (error) {
+          console.error(`Lỗi sync user ${user.id}:`, error.message);
+          results.push({
+            status: 'error',
+            userId: user.id,
+            userCode: user.userCode,
+            error: error.message,
+          });
+          errorCount++;
+        }
+      }
+
+      return {
+        message: 'Sync userCode sang cardNumber hoàn tất',
+        totalUsers: users.length,
+        successCount,
+        errorCount,
+        results,
+      };
+    } catch (error) {
+      console.error('Error syncing userCode to cardNumber:', error);
+      throw new BadRequestException(
+        `Không thể sync userCode: ${error.message}`,
+      );
+    }
   }
 
   /**
@@ -305,7 +385,9 @@ export class ExcelService {
 
       // Validate các trường enum
       if (row['role'] && !['Độc giả', 'Admin'].includes(row['role'])) {
-        errors.push(`Dòng ${index + 1}: Vai trò phải là 'admin' hoặc 'reader'`);
+        errors.push(
+          `Dòng ${index + 1}: Vai trò phải là 'Độc giả' hoặc 'Admin'`,
+        );
         hasError = true;
       }
 
@@ -314,14 +396,14 @@ export class ExcelService {
         !['Hoạt động', 'Không hoạt động'].includes(row['accountStatus'])
       ) {
         errors.push(
-          `Dòng ${index + 1}: Trạng thái phải là 'active', 'inactive', hoặc 'banned'`,
+          `Dòng ${index + 1}: Trạng thái phải là 'Hoạt động' hoặc 'Không hoạt động'`,
         );
         hasError = true;
       }
 
       if (row['gender'] && !['Khác', 'Nam', 'Nữ'].includes(row['gender'])) {
         errors.push(
-          `Dòng ${index + 1}: Giới tính phải là 'male', 'female', hoặc 'other'`,
+          `Dòng ${index + 1}: Giới tính phải là 'Nam', 'Nữ', hoặc 'Khác'`,
         );
         hasError = true;
       }
@@ -336,9 +418,6 @@ export class ExcelService {
           errors.push(`Dòng ${index + 1}: Mật khẩu không được quá 255 ký tự`);
           hasError = true;
         }
-      } else if (row['password']) {
-        errors.push(`Dòng ${index + 1}: Mật khẩu phải là chuỗi`);
-        hasError = true;
       }
 
       if (hasError) {
@@ -359,7 +438,7 @@ export class ExcelService {
    * Map role Excel sang UserRole enum
    */
   private mapRoleToUserRole(role: string): UserRole {
-    if (role === 'admin') return UserRole.ADMIN;
+    if (role === 'Admin') return UserRole.ADMIN;
     return UserRole.READER;
   }
 
@@ -367,8 +446,8 @@ export class ExcelService {
    * Map status Excel sang AccountStatus enum
    */
   private mapStatusToAccountStatus(status: string): AccountStatus {
-    if (status === 'inactive') return AccountStatus.SUSPENDED;
-    if (status === 'banned') return AccountStatus.BANNED;
+    if (status === 'Không hoạt động') return AccountStatus.SUSPENDED;
+    if (status === 'Bị cấm') return AccountStatus.BANNED;
     return AccountStatus.ACTIVE;
   }
 
@@ -376,8 +455,8 @@ export class ExcelService {
    * Map gender Excel sang Gender enum
    */
   private mapGenderToEnum(gender: string): Gender {
-    if (gender === 'female') return Gender.FEMALE;
-    if (gender === 'other') return Gender.OTHER;
+    if (gender === 'Nữ') return Gender.FEMALE;
+    if (gender === 'Khác') return Gender.OTHER;
     return Gender.MALE;
   }
 

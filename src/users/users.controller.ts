@@ -468,4 +468,90 @@ export class UsersController {
   async createUsersFromExcel(@Body() body: { excelData: any[] }): Promise<any> {
     return this.excelService.createUsersFromExcel(body.excelData);
   }
+
+  // TEST ENDPOINT - Test endpoint để debug
+  @Get('test-sync')
+  @ApiOperation({ summary: 'Test endpoint để debug sync' })
+  @ApiResponse({
+    status: 200,
+    description: 'Test thành công.',
+  })
+  async testSync(): Promise<any> {
+    return {
+      message: 'Test thành công - API hoạt động',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // GET READER TYPES - Lấy danh sách loại độc giả
+  @Get('reader-types')
+  @ApiOperation({ summary: 'Lấy danh sách loại độc giả' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách loại độc giả thành công.',
+  })
+  async getReaderTypes(): Promise<any> {
+    return this.usersService.getReaderTypes();
+  }
+
+  // CREATE READER FOR USER - Tạo reader cho user
+  @Post(':id/reader')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Tạo reader cho user (Admin)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        fullName: { type: 'string' },
+        dob: { type: 'string', format: 'date' },
+        gender: { type: 'string', enum: ['male', 'female', 'other'] },
+        address: { type: 'string' },
+        phone: { type: 'string' },
+        cardNumber: { type: 'string' },
+        cardIssueDate: { type: 'string', format: 'date' },
+        cardExpiryDate: { type: 'string', format: 'date' },
+        readerTypeName: {
+          type: 'string',
+          enum: ['student', 'teacher', 'staff'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo reader thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @ApiResponse({ status: 404, description: 'User không tồn tại.' })
+  @HttpCode(HttpStatus.CREATED)
+  async createReaderForUser(
+    @Param('id') userId: string,
+    @Body() readerData: any,
+  ): Promise<any> {
+    return this.usersService.createReaderForUser(userId, readerData);
+  }
+
+  // SYNC USERCODE TO CARDNUMBER - Sync userCode sang cardNumber
+  @Post('sync-usercode-to-cardnumber')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Sync userCode sang cardNumber cho tất cả users (Admin)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Sync userCode sang cardNumber thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.OK)
+  async syncUserCodeToCardNumber(): Promise<any> {
+    try {
+      return await this.excelService.syncUserCodeToCardNumber();
+    } catch (error) {
+      console.error('Sync error:', error);
+      throw error;
+    }
+  }
 }
