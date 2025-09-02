@@ -11,10 +11,10 @@ import {
 } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
-import slug from 'slug';
 import { BookCategory } from '../../book-categories/entities/book-category.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { Publisher } from '../../publishers/entities/publisher.entity';
+import slug from 'slug';
 
 export enum BookType {
   PHYSICAL = 'physical',
