@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -67,18 +67,31 @@ export class ReadersService {
       cardExpiryDateFrom,
       cardExpiryDateTo,
       phone,
+      q,
+      search,
     } = query;
     const skip = (page - 1) * limit;
 
-    // Xây dựng điều kiện lọc
-    const whereConditions: any = {};
+    // Sử dụng QueryBuilder để hỗ trợ tìm kiếm phức tạp
+    const queryBuilder = this.readerRepository
+      .createQueryBuilder('reader')
+      .leftJoinAndSelect('reader.user', 'user')
+      .leftJoinAndSelect('reader.readerType', 'readerType')
+      .orderBy('reader.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
 
+    // Xây dựng điều kiện lọc
     if (cardNumber) {
-      whereConditions.cardNumber = Like(`%${cardNumber}%`);
+      queryBuilder.andWhere('reader.cardNumber ILIKE :cardNumber', {
+        cardNumber: `%${cardNumber}%`,
+      });
     }
 
     if (phone) {
-      whereConditions.phone = Like(`%${phone}%`);
+      queryBuilder.andWhere('reader.phone ILIKE :phone', {
+        phone: `%${phone}%`,
+      });
     }
 
     if (cardExpiryDateFrom || cardExpiryDateTo) {
@@ -88,17 +101,25 @@ export class ReadersService {
       const toDate = cardExpiryDateTo
         ? new Date(cardExpiryDateTo)
         : new Date('9999-12-31');
-      whereConditions.cardExpiryDate = Between(fromDate, toDate);
+      queryBuilder.andWhere(
+        'reader.cardExpiryDate BETWEEN :fromDate AND :toDate',
+        {
+          fromDate,
+          toDate,
+        },
+      );
     }
 
-    const [data, totalItems] = await this.readerRepository.findAndCount({
-      where:
-        Object.keys(whereConditions).length > 0 ? whereConditions : undefined,
-      relations: ['user', 'readerType'],
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Tìm kiếm theo q hoặc search (fullName, cardNumber, email của user)
+    const searchTerm = q || search;
+    if (searchTerm) {
+      queryBuilder.andWhere(
+        '(reader.fullName ILIKE :search OR reader.cardNumber ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${searchTerm}%` },
+      );
+    }
+
+    const [data, totalItems] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;

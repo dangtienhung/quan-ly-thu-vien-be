@@ -1,5 +1,3 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsOptional,
@@ -7,6 +5,9 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class ReadersQueryDto {
   @ApiPropertyOptional({
@@ -63,4 +64,20 @@ export class ReadersQueryDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tìm kiếm theo tên, số thẻ, email của user',
+    example: 'Nguyễn Văn A',
+  })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tìm kiếm theo tên, số thẻ, email của user (alias cho q)',
+    example: 'Nguyễn Văn A',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

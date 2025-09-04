@@ -100,6 +100,18 @@ export class ReadersController {
     type: String,
     description: 'Lọc theo số điện thoại',
   })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên, số thẻ, email của user',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên, số thẻ, email của user (alias cho q)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách độc giả thành công.',
