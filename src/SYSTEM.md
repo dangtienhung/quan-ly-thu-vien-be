@@ -18,9 +18,9 @@ Hệ thống Quản lý Thư viện là một ứng dụng web hiện đại đ�
 ### 📊 Database Schema Overview
 
 ```
-🔑 Core Entities: 19 tables
+🔑 Core Entities: 20 tables
 👥 User Management: 3 tables (Users, ReaderTypes, Readers)
-📚 Book Management: 10 tables (Books, Authors, Categories, Publishers, BookAuthors, PhysicalCopies, EBooks, GradeLevels, BookCategories, BookGradeLevels)
+📚 Book Management: 11 tables (Books, Authors, Categories, Publishers, BookAuthors, PhysicalCopies, EBooks, GradeLevels, BookCategories, BookGradeLevels, Locations)
 🖼️ Media Management: 2 tables (Images, Uploads)
 🔄 Transaction Management: 4 tables (BorrowRecords, Reservations, Renewals, Fines)
 ```
@@ -43,7 +43,7 @@ Users → ReaderTypes → Readers
 Books ← BookAuthors → Authors
 Books → Categories
 Books → Publishers
-Books → PhysicalCopies
+Books → PhysicalCopies → Locations
 Books → EBooks
 Books ↔ BookGradeLevels ↔ GradeLevels
 Books → BookCategories
@@ -56,6 +56,7 @@ BookCategories → BookCategories   -- self-referential via parent_id
 - **Categories**: Phân loại sách
 - **Publishers**: Nhà xuất bản
 - **PhysicalCopies**: Bản sao vật lý
+- **Locations**: Vị trí kệ sách trong thư viện
 - **EBooks**: Sách điện tử
 - **GradeLevels**: Khối lớp (Lớp 1, Đại học, ...)
 - **BookCategories**: Thể loại chi tiết (Sách Toán, Công nghệ, ...)
@@ -236,6 +237,23 @@ interface Publisher {
 }
 ```
 
+#### **Locations Table**
+
+```typescript
+interface Location {
+  id: uuid;
+  name: string; // Tên vị trí kệ sách
+  slug: string; // Slug cho URL thân thiện
+  description: string; // Mô tả chi tiết
+  floor: number; // Tầng của thư viện
+  section: string; // Khu vực trong thư viện
+  shelf: string; // Số kệ
+  isActive: boolean; // Trạng thái hoạt động
+  created_at: datetime;
+  updated_at: datetime;
+}
+```
+
 #### **PhysicalCopies Table**
 
 ```typescript
@@ -254,7 +272,8 @@ interface PhysicalCopy {
   condition_details: string;
   purchase_date: date;
   purchase_price: decimal;
-  location: string; // Vị trí trong thư viện
+  location_id: uuid; // Link to Locations table
+  location: Location; // Relationship to Location entity
   notes: string;
   last_checkup_date: date;
   is_archived: boolean;
@@ -375,17 +394,18 @@ interface Fine {
 1. **Users → Readers**: One-to-One relationship
 2. **ReaderTypes → Readers**: One-to-Many relationship
 3. **Books → PhysicalCopies**: One-to-Many relationship
-4. **Books → EBooks**: One-to-Many relationship
-5. **Books ↔ Authors**: Many-to-Many (via BookAuthors)
-6. **Books → Images**: Many-to-One relationship (cover images)
-7. **EBooks → Uploads**: Many-to-One relationship (PDF files)
-8. **Books ↔ GradeLevels**: Many-to-Many (via BookGradeLevels)
-9. **Books → BookCategories**: Many-to-One (main_category_id)
-10. **BookCategories → BookCategories**: One-to-Many self-referential (parent_id)
-11. **Readers → BorrowRecords**: One-to-Many relationship
-12. **PhysicalCopies → BorrowRecords**: One-to-Many relationship
-13. **BorrowRecords → Renewals**: One-to-Many relationship
-14. **BorrowRecords → Fines**: One-to-Many relationship
+4. **Locations → PhysicalCopies**: One-to-Many relationship
+5. **Books → EBooks**: One-to-Many relationship
+6. **Books ↔ Authors**: Many-to-Many (via BookAuthors)
+7. **Books → Images**: Many-to-One relationship (cover images)
+8. **EBooks → Uploads**: Many-to-One relationship (PDF files)
+9. **Books ↔ GradeLevels**: Many-to-Many (via BookGradeLevels)
+10. **Books → BookCategories**: Many-to-One (main_category_id)
+11. **BookCategories → BookCategories**: One-to-Many self-referential (parent_id)
+12. **Readers → BorrowRecords**: One-to-Many relationship
+13. **PhysicalCopies → BorrowRecords**: One-to-Many relationship
+14. **BorrowRecords → Renewals**: One-to-Many relationship
+15. **BorrowRecords → Fines**: One-to-Many relationship
 
 ```mermaid
 erDiagram
@@ -393,12 +413,14 @@ erDiagram
     GradeLevels ||--o{ BookGradeLevels : "1-nhiều"
     Books }|--|| BookCategories : "main_category_id"
     BookCategories ||--o{ BookCategories : "parent_id"
+    Locations ||--o{ PhysicalCopies : "1-nhiều"
+    Books ||--o{ PhysicalCopies : "1-nhiều"
 ```
 
 ### **Key Constraints**
 
 - **UUID Primary Keys**: Tất cả tables sử dụng UUID
-- **Unique Constraints**: username, email, card_number, barcode, isbn, file_name, slug, GradeLevels.name, BookCategories.name
+- **Unique Constraints**: username, email, card_number, barcode, isbn, file_name, slug, GradeLevels.name, BookCategories.name, Locations.slug
 - **Composite Primary Keys**: BookGradeLevels(book_id, grade_level_id)
 - **Enum Constraints**: role, account_status, book_type, status fields
 - **Foreign Key Constraints**: Đảm bảo referential integrity
@@ -432,6 +454,26 @@ erDiagram
    - `available` → `borrowed` → `available`
    - `reserved` → `borrowed`
    - `damaged`/`lost`/`maintenance` → không available
+
+### **Location Management Rules**
+
+1. **Location Structure**:
+   - **Floor**: Tầng của thư viện (1, 2, 3, ...)
+   - **Section**: Khu vực (Khu A, Khu B, Khu C, ...)
+   - **Shelf**: Số kệ cụ thể (A1, A2, B1, B2, ...)
+
+2. **Location Naming Convention**:
+   - Format: `{Section}{Shelf} - Tầng {Floor}`
+   - Example: `Kệ A1 - Tầng 1`, `Kệ B3 - Tầng 2`
+
+3. **Location Status**:
+   - `isActive: true`: Vị trí đang hoạt động
+   - `isActive: false`: Vị trí tạm ngưng hoạt động
+
+4. **Physical Copy Assignment**:
+   - Mỗi PhysicalCopy có thể có hoặc không có location
+   - Khi xóa Location, PhysicalCopy.location_id được set NULL
+   - Location có thể chứa nhiều PhysicalCopy
 
 ### **Borrowing Rules**
 
@@ -715,13 +757,14 @@ CREATE UNIQUE INDEX book_categories_name_unique_idx ON BookCategories(name);
 
 ## 📞 Technical Support
 
-**Database Schema Version**: 1.3
+**Database Schema Version**: 1.4
 **Last Updated**: 2024-01-01
-**Schema Complexity**: 19 tables, 25+ relationships
+**Schema Complexity**: 20 tables, 26+ relationships
 **Estimated Records**:
 
 - Books: 10,000+
 - Readers: 5,000+
+- Locations: 200+
 - Images: 5,000+
 - Uploads: 3,000+
 - Transactions: 50,000+/year

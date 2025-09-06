@@ -50,7 +50,7 @@ export class PhysicalCopyService {
 
     const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
       where: { book_id: bookId },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -76,7 +76,7 @@ export class PhysicalCopyService {
   async findPhysicalCopyByBarcode(barcode: string): Promise<PhysicalCopy> {
     const copy = await this.physicalCopyRepository.findOne({
       where: { barcode },
-      relations: ['book'],
+      relations: ['book', 'location'],
     });
     if (!copy) {
       throw new NotFoundException(
@@ -92,7 +92,7 @@ export class PhysicalCopyService {
   ): Promise<PhysicalCopy> {
     const copy = await this.physicalCopyRepository.findOne({
       where: { id },
-      relations: ['book'],
+      relations: ['book', 'location'],
     });
     if (!copy) {
       throw new NotFoundException(`Không tìm thấy bản sao với ID ${id}`);
@@ -120,7 +120,7 @@ export class PhysicalCopyService {
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -189,7 +189,7 @@ export class PhysicalCopyService {
 
     const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
       where: { status },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -221,7 +221,7 @@ export class PhysicalCopyService {
 
     const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
       where: { current_condition: condition },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -245,15 +245,15 @@ export class PhysicalCopyService {
 
   // Lọc theo vị trí
   async findByLocation(
-    location: string,
+    locationId: string,
     paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<PhysicalCopy>> {
     const { page = 1, limit = 10 } = paginationQuery;
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.physicalCopyRepository.findAndCount({
-      where: { location },
-      relations: ['book'],
+      where: { location_id: locationId },
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -287,7 +287,7 @@ export class PhysicalCopyService {
         status: CopyStatus.AVAILABLE,
         is_archived: false,
       },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -326,7 +326,7 @@ export class PhysicalCopyService {
         status: CopyStatus.AVAILABLE,
         is_archived: false,
       },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -359,7 +359,7 @@ export class PhysicalCopyService {
       where: {
         status: In([CopyStatus.DAMAGED, CopyStatus.MAINTENANCE]),
       },
-      relations: ['book'],
+      relations: ['book', 'location'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -430,7 +430,7 @@ export class PhysicalCopyService {
   async findOne(id: string): Promise<PhysicalCopy> {
     const copy = await this.physicalCopyRepository.findOne({
       where: { id },
-      relations: ['book'],
+      relations: ['book', 'location'],
     });
 
     if (!copy) {

@@ -79,13 +79,13 @@ export class CreatePhysicalCopyDto {
   purchase_price: number;
 
   @ApiProperty({
-    description: 'Vị trí trong thư viện',
-    example: 'Kệ A2-T3',
+    description: 'ID vị trí kệ sách',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
   })
-  @IsNotEmpty({ message: 'Vị trí không được để trống' })
-  @IsString({ message: 'Vị trí phải là chuỗi ký tự' })
-  @MaxLength(100, { message: 'Vị trí không được quá 100 ký tự' })
-  location: string;
+  @IsOptional()
+  @IsUUID('4', { message: 'ID vị trí không hợp lệ' })
+  location_id?: string;
 
   @ApiProperty({
     description: 'Ghi chú',

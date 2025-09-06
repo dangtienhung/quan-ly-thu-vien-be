@@ -88,10 +88,10 @@ export class PhysicalCopyController {
           description: 'Giá mua',
           example: 75000,
         },
-        location: {
+        location_id: {
           type: 'string',
-          description: 'Vị trí trong thư viện',
-          example: 'Kệ A2-T3',
+          description: 'ID vị trí kệ sách',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
       },
     },
@@ -113,7 +113,7 @@ export class PhysicalCopyController {
       count: number;
       purchase_date?: string;
       purchase_price?: number;
-      location?: string;
+      location_id?: string;
     },
   ): Promise<PhysicalCopy[]> {
     return this.physicalCopyService.createMany(bookId, body.count, {
@@ -121,7 +121,7 @@ export class PhysicalCopyController {
         ? new Date(body.purchase_date)
         : undefined,
       purchase_price: body.purchase_price,
-      location: body.location,
+      location_id: body.location_id,
     });
   }
 

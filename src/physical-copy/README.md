@@ -37,7 +37,7 @@ POST /physical-copies
   "barcode": "LIB-2024-001",
   "purchase_date": "2024-01-01",
   "purchase_price": 75000,
-  "location": "Kệ A2-T3",
+  "location_id": "550e8400-e29b-41d4-a716-446655440000",
   "current_condition": "new",
   "condition_details": "Sách mới hoàn toàn"
 }
@@ -56,7 +56,7 @@ POST /physical-copies/book/550e8400-e29b-41d4-a716-446655440000/many
   "count": 5,
   "purchase_date": "2024-01-01",
   "purchase_price": 75000,
-  "location": "Kệ A2-T3"
+  "location_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -87,7 +87,7 @@ GET /physical-copies/condition/good?page=1&limit=10
 ### **7. Lọc theo vị trí**
 
 ```http
-GET /physical-copies/location/Kệ A2-T3?page=1&limit=10
+GET /physical-copies/location/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
 ```
 
 ### **8. Bản sao sẵn sàng cho mượn**
@@ -114,7 +114,7 @@ GET /physical-copies/book/550e8400-e29b-41d4-a716-446655440000/available?page=1&
       "barcode": "LIB-2024-001",
       "status": "available",
       "current_condition": "new",
-      "location": "Kệ A2-T3",
+      "location_id": "550e8400-e29b-41d4-a716-446655440000",
       "book": {
         "id": "uuid",
         "title": "Tên sách",
@@ -164,8 +164,8 @@ GET /physical-copies/stats
     { "condition": "damaged", "count": 5 }
   ],
   "byLocation": [
-    { "location": "Kệ A2-T3", "count": 30 },
-    { "location": "Kệ B1-T1", "count": 25 }
+    { "location": "Kệ A2 - Tầng 3", "count": 30 },
+    { "location": "Kệ B1 - Tầng 1", "count": 25 }
   ],
   "totalValue": 11250000
 }
@@ -320,7 +320,7 @@ DELETE /physical-copies/550e8400-e29b-41d4-a716-446655440000
 -- Indexes cho performance
 CREATE INDEX idx_physical_copies_status ON physical_copies(status);
 CREATE INDEX idx_physical_copies_condition ON physical_copies(current_condition);
-CREATE INDEX idx_physical_copies_location ON physical_copies(location);
+CREATE INDEX idx_physical_copies_location_id ON physical_copies(location_id);
 CREATE INDEX idx_physical_copies_book_id ON physical_copies(book_id);
 CREATE INDEX idx_physical_copies_barcode ON physical_copies(barcode);
 CREATE INDEX idx_physical_copies_archived ON physical_copies(is_archived);
@@ -339,6 +339,12 @@ CREATE INDEX idx_physical_copies_archived ON physical_copies(is_archived);
 - Kiểm tra sách tồn tại khi tạo bản sao
 - Lấy thông tin sách cho hiển thị
 - Validate book_type là physical
+
+### **LocationsModule:**
+
+- Quản lý vị trí kệ sách trong thư viện
+- Liên kết PhysicalCopy với Location cụ thể
+- Hỗ trợ tìm kiếm và lọc theo vị trí
 
 ### **BorrowRecordsModule:**
 
@@ -384,7 +390,7 @@ CREATE INDEX idx_physical_copies_archived ON physical_copies(is_archived);
 - `barcode`: Chuỗi unique, tối đa 50 ký tự, bắt buộc
 - `purchase_date`: Định dạng ngày hợp lệ, bắt buộc
 - `purchase_price`: Số thập phân > 0, bắt buộc
-- `location`: Chuỗi, tối đa 100 ký tự, bắt buộc
+- `location_id`: UUID hợp lệ, tùy chọn (liên kết với Locations table)
 - `current_condition`: Enum CopyCondition, tùy chọn
 - `condition_details`: Tối đa 500 ký tự, tùy chọn
 - `notes`: Tối đa 500 ký tự, tùy chọn
@@ -436,7 +442,7 @@ CREATE INDEX idx_physical_copies_archived ON physical_copies(is_archived);
 
 **Module Version**: 2.0
 **Last Updated**: 2024-01-01
-**Dependencies**: BooksModule
+**Dependencies**: BooksModule, LocationsModule
 
 **Access Points:**
 

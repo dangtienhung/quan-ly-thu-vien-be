@@ -27,6 +27,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { UsersModule } from './users/users.module';
     GradeLevelsModule,
     BookCategoriesModule,
     BookGradeLevelsModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [

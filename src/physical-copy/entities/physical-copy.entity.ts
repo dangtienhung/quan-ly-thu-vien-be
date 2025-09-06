@@ -10,6 +10,7 @@ import {
 
 import { ApiProperty } from '@nestjs/swagger';
 import { Book } from '../../books/entities/book.entity';
+import { Location } from '../../locations/entities/location.entity';
 
 export enum CopyStatus {
   AVAILABLE = 'available',
@@ -101,11 +102,15 @@ export class PhysicalCopy {
   purchase_price: number;
 
   @ApiProperty({
-    description: 'Vị trí trong thư viện',
-    example: 'Kệ A2-T3',
+    description: 'ID vị trí kệ sách',
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @Column({ type: 'varchar', length: 100 })
-  location: string;
+  @Column({ type: 'uuid', nullable: true })
+  location_id: string;
+
+  @ManyToOne(() => Location, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'location_id' })
+  location: Location;
 
   @ApiProperty({
     description: 'Ghi chú',
