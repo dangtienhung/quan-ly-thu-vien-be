@@ -303,10 +303,13 @@ export class BookAuthorsController {
     });
 
     // Lấy danh sách tác giả
-    const authors = await this.bookAuthorsService['authorsService'].findAll({
-      page: 1,
-      limit: 10,
-    });
+    const authors = await this.bookAuthorsService['authorsService'].findAll(
+      '', // Empty query for getting all authors
+      {
+        page: 1,
+        limit: 10,
+      },
+    );
 
     return {
       books: books.data.map((book) => ({ id: book.id, title: book.title })),

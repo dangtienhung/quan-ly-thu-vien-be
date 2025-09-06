@@ -79,3 +79,6 @@ export class PaginatedResponseDto<T> {
   })
   meta: PaginationMetaDto;
 }
+
+// Re-export SearchQueryDto for convenience
+export { SearchQueryDto } from './search-query.dto';

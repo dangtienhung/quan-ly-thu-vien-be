@@ -33,6 +33,7 @@ export class AuthorsService {
 
   // Lấy danh sách có phân trang
   async findAll(
+    query: string,
     paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<Author>> {
     const { page = 1, limit = 10 } = paginationQuery;

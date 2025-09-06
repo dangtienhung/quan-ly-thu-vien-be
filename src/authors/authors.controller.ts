@@ -22,6 +22,7 @@ import {
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
+  SearchQueryDto,
 } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -84,6 +85,12 @@ export class AuthorsController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên tác giả',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách tác giả thành công.',
@@ -91,26 +98,14 @@ export class AuthorsController {
     isArray: true,
   })
   findAll(
+    @Query('q') query: string,
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<Author>> {
-    return this.authorsService.findAll(paginationQuery);
+    return this.authorsService.findAll(query, paginationQuery);
   }
 
   @Get('search')
   @ApiOperation({ summary: 'Tìm kiếm tác giả' })
-  @ApiQuery({ name: 'q', required: true, description: 'Từ khóa tìm kiếm' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang (mặc định: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng mỗi trang (mặc định: 10)',
-  })
   @ApiResponse({
     status: 200,
     description: 'Tìm kiếm tác giả thành công.',
@@ -118,10 +113,12 @@ export class AuthorsController {
     isArray: true,
   })
   search(
-    @Query('q') query: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() searchQuery: SearchQueryDto,
   ): Promise<PaginatedResponseDto<Author>> {
-    return this.authorsService.search(query, paginationQuery);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { q, page = 1, limit = 10 } = searchQuery as any;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    return this.authorsService.search(q, { page, limit });
   }
 
   @Get('nationality/:nationality')
