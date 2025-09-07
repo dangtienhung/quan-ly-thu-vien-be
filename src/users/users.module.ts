@@ -2,6 +2,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailService } from '../common/services/email.service';
 import { ExcelService } from './excel.service';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
@@ -30,7 +31,13 @@ import { UsersService } from './users.service';
     }),
   ],
   controllers: [UsersController, AuthController],
-  providers: [UsersService, AuthService, JwtStrategy, ExcelService],
+  providers: [
+    UsersService,
+    AuthService,
+    JwtStrategy,
+    ExcelService,
+    EmailService,
+  ],
   exports: [UsersService, AuthService],
 })
 export class UsersModule {}

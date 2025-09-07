@@ -7,9 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { EmailService } from '../common/services/email.service';
 import { ChangePasswordDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+
+interface JwtPayload {
+  sub: string;
+  email?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -18,9 +24,10 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
+  async validateUser(username: string, password: string): Promise<User | null> {
     console.log('🚀 ~ AuthService ~ validateUser ~ username:', username);
     let user = await this.userRepository.findOne({ where: { username } });
     console.log('🚀 ~ AuthService ~ validateUser ~ user:', user);
@@ -31,8 +38,9 @@ export class AuthService {
     }
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      const { password, ...result } = user;
-      return result;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...result } = user;
+      return result as User;
     }
     return null;
   }
@@ -50,7 +58,7 @@ export class AuthService {
     await this.usersService.updateLastLogin(user.id);
 
     // Chỉ mã hóa id trong payload
-    const payload = {
+    const payload: JwtPayload = {
       sub: user.id,
     };
 
@@ -106,12 +114,23 @@ export class AuthService {
       { expiresIn: '15m' }, // Token hết hạn sau 15 phút
     );
 
-    // TODO: Gửi email chứa link đặt lại mật khẩu
-    // Link có dạng: frontend-url/reset-password?token=resetToken
+    try {
+      // Gửi email chứa link đặt lại mật khẩu
+      await this.emailService.sendResetPasswordEmail(
+        user.email,
+        resetToken,
+        user.username,
+      );
 
-    return {
-      message: 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn',
-    };
+      return {
+        message: 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn',
+      };
+    } catch (error) {
+      console.error('Error sending reset password email:', error);
+      throw new BadRequestException(
+        'Không thể gửi email. Vui lòng thử lại sau.',
+      );
+    }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -141,8 +160,8 @@ export class AuthService {
       return {
         message: 'Đặt lại mật khẩu thành công',
       };
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token đã hết hạn');
       }
       throw new UnauthorizedException('Token không hợp lệ');

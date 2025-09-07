@@ -57,33 +57,65 @@ export class AuthController {
   })
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    @Request() req,
+    @Request() req: any,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(req.user.sub, changePasswordDto);
   }
 
   @Post('forgot-password')
-  @ApiOperation({ summary: 'Yêu cầu đặt lại mật khẩu' })
+  @ApiOperation({
+    summary: 'Yêu cầu đặt lại mật khẩu',
+    description:
+      'Gửi email chứa link đặt lại mật khẩu đến địa chỉ email đã đăng ký. Link có hiệu lực trong 15 phút.',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         email: {
           type: 'string',
+          format: 'email',
           example: 'nguyenvana@example.com',
           description: 'Email đăng ký tài khoản',
         },
       },
+      required: ['email'],
     },
   })
   @ApiResponse({
     status: 200,
     description: 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
-    description: 'Email không tồn tại trong hệ thống.',
+    description: 'Email không tồn tại trong hệ thống hoặc không thể gửi email.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Email không tồn tại trong hệ thống',
+        },
+        error: {
+          type: 'string',
+          example: 'Bad Request',
+        },
+        statusCode: {
+          type: 'number',
+          example: 400,
+        },
+      },
+    },
   })
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body('email') email: string) {
@@ -91,15 +123,45 @@ export class AuthController {
   }
 
   @Post('reset-password')
-  @ApiOperation({ summary: 'Đặt lại mật khẩu' })
+  @ApiOperation({
+    summary: 'Đặt lại mật khẩu',
+    description:
+      'Đặt lại mật khẩu mới bằng token từ email. Token có hiệu lực trong 15 phút.',
+  })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({
     status: 200,
     description: 'Đặt lại mật khẩu thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Đặt lại mật khẩu thành công',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 401,
     description: 'Token không hợp lệ hoặc đã hết hạn.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Token không hợp lệ',
+        },
+        error: {
+          type: 'string',
+          example: 'Unauthorized',
+        },
+        statusCode: {
+          type: 'number',
+          example: 401,
+        },
+      },
+    },
   })
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
