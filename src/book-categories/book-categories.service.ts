@@ -12,6 +12,7 @@ import {
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
 import { CreateBookCategoryDto } from './dto/create-book-category.dto';
+// import { HierarchicalCategoriesResponseDto, HierarchicalCategoryDto } from './dto/hierarchical-category.dto';
 import { UpdateBookCategoryDto } from './dto/update-book-category.dto';
 import { BookCategory } from './entities/book-category.entity';
 
@@ -152,5 +153,41 @@ export class BookCategoriesService {
   async remove(id: string): Promise<void> {
     const entity = await this.findOne(id);
     await this.categoryRepo.remove(entity);
+  }
+
+  async getHierarchicalCategories(): Promise<any> {
+    try {
+      // Test method đơn giản
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          message: 'Test hierarchical categories',
+        },
+      };
+    } catch (error) {
+      console.error('Error in getHierarchicalCategories:', error);
+      throw new BadRequestException(
+        'Failed to fetch hierarchical categories: ' + error.message,
+      );
+    }
+  }
+
+  async getTreeCategories(): Promise<any> {
+    try {
+      // Test method mới
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          message: 'Test tree categories',
+        },
+      };
+    } catch (error) {
+      console.error('Error in getTreeCategories:', error);
+      throw new BadRequestException(
+        'Failed to fetch tree categories: ' + error.message,
+      );
+    }
   }
 }
