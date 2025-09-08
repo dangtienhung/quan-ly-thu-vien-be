@@ -121,6 +121,7 @@ export class BooksService {
       type,
       main_category_id,
       category_id,
+      view,
     } = findAllBooksDto;
     const skip = (page - 1) * limit;
 
@@ -129,10 +130,16 @@ export class BooksService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.category', 'category')
       .leftJoinAndSelect('book.publisher', 'publisher')
-      .leftJoinAndSelect('book.mainCategory', 'mainCategory')
-      .orderBy('book.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
+      .leftJoinAndSelect('book.mainCategory', 'mainCategory');
+
+    // Sắp xếp theo view nếu có, nếu không thì sắp xếp theo created_at
+    if (view) {
+      queryBuilder.orderBy('book.view', view.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy('book.created_at', 'DESC');
+    }
+
+    queryBuilder.skip(skip).take(limit);
 
     // Thêm điều kiện tìm kiếm theo q nếu có
     if (q) {

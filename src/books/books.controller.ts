@@ -108,6 +108,12 @@ export class BooksController {
     type: String,
     description: 'Lọc theo ID thể loại (Categories)',
   })
+  @ApiQuery({
+    name: 'view',
+    required: false,
+    enum: ['asc', 'desc'],
+    description: 'Sắp xếp theo số lượng view (asc: tăng dần, desc: giảm dần)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách sách thành công.',

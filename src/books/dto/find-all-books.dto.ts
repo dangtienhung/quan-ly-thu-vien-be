@@ -8,6 +8,11 @@ export enum BookType {
   EBOOK = 'ebook',
 }
 
+export enum ViewSortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
 export class FindAllBooksDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description: 'Từ khóa tìm kiếm theo title và description',
@@ -41,4 +46,13 @@ export class FindAllBooksDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID('4', { message: 'category_id phải là UUID hợp lệ' })
   category_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sắp xếp theo số lượng view',
+    enum: ViewSortOrder,
+    example: ViewSortOrder.DESC,
+  })
+  @IsOptional()
+  @IsEnum(ViewSortOrder, { message: 'view phải là "asc" hoặc "desc"' })
+  view?: ViewSortOrder;
 }
