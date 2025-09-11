@@ -17,6 +17,7 @@ import { FinesModule } from './fines/fines.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { GradeLevelsModule } from './grade-levels/grade-levels.module';
 import { ImagesModule } from './images/images.module';
+import { LocationsModule } from './locations/locations.module';
 import { PhysicalCopyModule } from './physical-copy/physical-copy.module';
 import { ProductsModule } from './products/products.module';
 import { PublishersModule } from './publishers/publishers.module';
@@ -27,7 +28,6 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
-import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [

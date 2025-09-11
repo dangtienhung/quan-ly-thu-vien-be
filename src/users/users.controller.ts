@@ -36,6 +36,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { FilterUsersDto } from './dto/filter-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UploadExcelResponseDto } from './dto/upload-excel.dto';
+import { UserStatsDto } from './dto/user-stats.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
 import { ExcelService } from './excel.service';
 import { UsersService } from './users.service';
@@ -256,46 +257,6 @@ export class UsersController {
     return this.usersService.findByEmail(email);
   }
 
-  // READ ONE - Tìm user theo ID
-  @Get(':id')
-  // @Roles('admin')
-  @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID (Admin)' })
-  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lấy thông tin người dùng thành công.',
-    type: User,
-  })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  async findOne(@Param('id') id: string): Promise<User> {
-    return this.usersService.findOne(id);
-  }
-
-  // UPDATE - Cập nhật user
-  @Patch(':id')
-  // @Roles('admin')
-  @ApiOperation({ summary: 'Cập nhật thông tin người dùng theo ID (Admin)' })
-  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
-  @ApiBody({ type: UpdateUserDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Cập nhật thông tin người dùng thành công.',
-    type: User,
-  })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  @ApiResponse({
-    status: 409,
-    description: 'Tên đăng nhập hoặc email đã tồn tại.',
-  })
-  async update(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.usersService.update(id, updateUserDto);
-  }
-
   // UTILITY - Suspend user
   @Patch(':id/suspend')
   // @Roles('admin')
@@ -358,22 +319,6 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   async updateLastLogin(@Param('id') id: string): Promise<User> {
     return this.usersService.updateLastLogin(id);
-  }
-
-  // DELETE - Xóa user
-  @Delete(':id')
-  // @Roles('admin')
-  @ApiOperation({ summary: 'Xóa người dùng theo ID (Admin)' })
-  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
-  @ApiResponse({
-    status: 204,
-    description: 'Xóa người dùng thành công.',
-  })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.usersService.remove(id);
   }
 
   // CREATE MULTIPLE - Tạo nhiều user cùng lúc
@@ -477,10 +422,46 @@ export class UsersController {
     description: 'Test thành công.',
   })
   async testSync(): Promise<any> {
+    console.log('✅ Test sync endpoint called');
     return {
       message: 'Test thành công - API hoạt động',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  // SIMPLE TEST ENDPOINT - Test endpoint đơn giản nhất
+  @Get('test-simple')
+  @ApiOperation({ summary: 'Test endpoint đơn giản nhất' })
+  @ApiResponse({
+    status: 200,
+    description: 'Test đơn giản thành công.',
+  })
+  async testSimple(): Promise<any> {
+    console.log('✅ Simple test endpoint called');
+    return 'Simple test OK';
+  }
+
+  // DATABASE TEST ENDPOINT - Test database connection
+  @Get('test-db')
+  @ApiOperation({ summary: 'Test database connection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Test database thành công.',
+  })
+  async testDatabase(): Promise<any> {
+    try {
+      console.log('✅ Testing database connection...');
+      const userCount = await this.usersService.getUserCount();
+      console.log('✅ Database connection successful');
+      return {
+        message: 'Database connection OK',
+        userCount: userCount,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('❌ Database connection failed:', error);
+      throw error;
+    }
   }
 
   // GET READER TYPES - Lấy danh sách loại độc giả
@@ -553,5 +534,199 @@ export class UsersController {
       console.error('Sync error:', error);
       throw error;
     }
+  }
+
+  // STATS BY DATE RANGE - Thống kê người dùng theo khoảng thời gian
+  @Get('stats-date-range')
+  @ApiOperation({ summary: 'Lấy thống kê người dùng theo khoảng thời gian' })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'Ngày bắt đầu (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'Ngày kết thúc (YYYY-MM-DD)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê theo khoảng thời gian thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Ngày không hợp lệ.' })
+  async getStatsByDateRange(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ): Promise<any> {
+    try {
+      console.log(`✅ Getting statistics from ${startDate} to ${endDate}`);
+      const stats = await this.usersService.getStatsByDateRange(
+        startDate,
+        endDate,
+      );
+      console.log('✅ Date range statistics retrieved successfully');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error getting date range statistics:', error);
+      throw error;
+    }
+  }
+
+  // STATS BY ROLE - Thống kê người dùng theo vai trò
+  @Get('stats-role/:role')
+  @ApiOperation({ summary: 'Lấy thống kê người dùng theo vai trò' })
+  @ApiParam({ name: 'role', description: 'Vai trò người dùng', enum: UserRole })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê theo vai trò thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Vai trò không hợp lệ.' })
+  async getStatsByRole(@Param('role') role: UserRole): Promise<any> {
+    try {
+      console.log(`✅ Getting statistics for role: ${role}`);
+      const stats = await this.usersService.getStatsByRole(role);
+      console.log('✅ Role statistics retrieved successfully');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error getting role statistics:', error);
+      throw error;
+    }
+  }
+
+  // STATS BY STATUS - Thống kê người dùng theo trạng thái
+  @Get('stats-status/:status')
+  @ApiOperation({
+    summary: 'Lấy thống kê người dùng theo trạng thái tài khoản',
+  })
+  @ApiParam({
+    name: 'status',
+    description: 'Trạng thái tài khoản',
+    enum: AccountStatus,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê theo trạng thái thành công.',
+  })
+  @ApiResponse({ status: 400, description: 'Trạng thái không hợp lệ.' })
+  async getStatsByStatus(@Param('status') status: AccountStatus): Promise<any> {
+    try {
+      console.log(`✅ Getting statistics for status: ${status}`);
+      const stats = await this.usersService.getStatsByStatus(status);
+      console.log('✅ Status statistics retrieved successfully');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error getting status statistics:', error);
+      throw error;
+    }
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Lấy thống kê chi tiết người dùng' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê người dùng thành công.',
+    schema: {
+      type: 'object',
+      properties: {
+        totalUsers: { type: 'number', example: 150 },
+        usersByRole: {
+          type: 'object',
+          properties: {
+            admin: { type: 'number', example: 5 },
+            reader: { type: 'number', example: 145 },
+          },
+        },
+        usersByStatus: {
+          type: 'object',
+          properties: {
+            active: { type: 'number', example: 140 },
+            suspended: { type: 'number', example: 8 },
+            banned: { type: 'number', example: 2 },
+          },
+        },
+        newUsersLast30Days: { type: 'number', example: 25 },
+        activeUsersLast7Days: { type: 'number', example: 45 },
+        neverLoggedInUsers: { type: 'number', example: 12 },
+        monthlyStats: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              month: { type: 'string', example: '2024-01' },
+              count: { type: 'number', example: 10 },
+            },
+          },
+        },
+        generatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 500, description: 'Lỗi server khi lấy thống kê.' })
+  async getUserStats(): Promise<UserStatsDto> {
+    try {
+      console.log('✅ Getting user statistics...');
+      const stats = await this.usersService.getUserStats();
+      console.log('✅ User statistics retrieved successfully');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error getting user statistics:', error);
+      throw error;
+    }
+  }
+
+  // READ ONE - Tìm user theo ID (phải đặt cuối cùng để tránh conflict với các route khác)
+  @Get(':id')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID (Admin)' })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin người dùng thành công.',
+    type: User,
+  })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  async findOne(@Param('id') id: string): Promise<User> {
+    return this.usersService.findOne(id);
+  }
+
+  // UPDATE - Cập nhật user (phải đặt cuối cùng để tránh conflict với các route khác)
+  @Patch(':id')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Cập nhật thông tin người dùng theo ID (Admin)' })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật thông tin người dùng thành công.',
+    type: User,
+  })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Tên đăng nhập hoặc email đã tồn tại.',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  // DELETE - Xóa user (phải đặt cuối cùng để tránh conflict với các route khác)
+  @Delete(':id')
+  // @Roles('admin')
+  @ApiOperation({ summary: 'Xóa người dùng theo ID (Admin)' })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
+  @ApiResponse({
+    status: 204,
+    description: 'Xóa người dùng thành công.',
+  })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string): Promise<void> {
+    return this.usersService.remove(id);
   }
 }

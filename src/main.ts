@@ -3,39 +3,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory, Reflector } from '@nestjs/core';
 
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Lấy ConfigService từ container
-  const configService = app.get(ConfigService);
-
-  // Cấu hình giới hạn kích thước request body để xử lý file Excel lớn
-  const requestBodyLimit = configService.get('REQUEST_BODY_LIMIT', '50mb');
-  const requestTimeout =
-    parseInt(configService.get('REQUEST_TIMEOUT', '300000')) || 300000;
-
-  console.log(`📊 Cấu hình request body limit: ${requestBodyLimit}`);
-  console.log(`⏱️ Cấu hình request timeout: ${requestTimeout}ms`);
-
-  // Cấu hình Express để tăng giới hạn request body
-  const express = require('express');
-  app.use(express.json({ limit: requestBodyLimit }));
-  app.use(express.urlencoded({ limit: requestBodyLimit, extended: true }));
-
-  // Cấu hình timeout cho request import lâu
-  app.use('/api/users/bulk', (req, res, next) => {
-    try {
-      req.setTimeout(requestTimeout); // Timeout từ biến môi trường
-      res.setTimeout(requestTimeout);
-      next();
-    } catch (error) {
-      console.error('❌ Lỗi cấu hình timeout:', error.message);
-      next(); // Vẫn tiếp tục xử lý request
-    }
-  });
 
   // Enable global validation pipe
   app.useGlobalPipes(
@@ -88,7 +59,7 @@ async function bootstrap() {
   });
 
   // Lấy port từ .env file, fallback về 3000 nếu không có
-  const port = configService.get('PORT', 3000);
+  const port = process.env.PORT || 3000;
 
   console.log(`🚀 Application is running on port: ${port}`);
   console.log(

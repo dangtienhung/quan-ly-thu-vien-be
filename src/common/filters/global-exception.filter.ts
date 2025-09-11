@@ -55,7 +55,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = 'Required field cannot be null';
         error = 'NotNullError';
       } else {
-        message = 'Database operation failed';
+        // Show more detailed error message in development
+        message =
+          process.env.NODE_ENV === 'production'
+            ? 'Database operation failed'
+            : `Database operation failed: ${exception.message}`;
       }
     }
     // Handle unexpected errors

@@ -5,7 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { DataSource, IsNull, Not, QueryRunner, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  IsNull,
+  Not,
+  QueryRunner,
+  Repository,
+} from 'typeorm';
 import {
   PaginatedResponseDto,
   PaginationMetaDto,
@@ -27,6 +34,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { FilterUsersDto } from './dto/filter-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserStatsDto } from './dto/user-stats.dto';
 import { AccountStatus, User, UserRole } from './entities/user.entity';
 
 @Injectable()
@@ -516,6 +524,310 @@ export class UsersService {
     return {
       data: readerTypes,
       total: readerTypes.length,
+    };
+  }
+
+  // GET USER COUNT - Lấy số lượng user (để test database)
+  async getUserCount(): Promise<number> {
+    return await this.userRepository.count();
+  }
+
+  // GET USER STATS - Lấy thống kê chi tiết người dùng
+  async getUserStats(): Promise<UserStatsDto> {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Tổng số người dùng
+    const totalUsers = await this.userRepository.count();
+
+    // Thống kê theo vai trò
+    const usersByRole = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('user.role')
+      .getRawMany();
+
+    const roleStats = usersByRole.reduce(
+      (acc, item) => {
+        acc[item.role] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<UserRole, number>,
+    );
+
+    // Thống kê theo trạng thái tài khoản
+    const usersByStatus = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.accountStatus', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('user.accountStatus')
+      .getRawMany();
+
+    const statusStats = usersByStatus.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<AccountStatus, number>,
+    );
+
+    // Người dùng mới trong 30 ngày qua
+    const newUsersLast30Days = await this.userRepository.count({
+      where: {
+        createdAt: Not(thirtyDaysAgo),
+      },
+    });
+
+    // Người dùng đăng nhập trong 7 ngày qua
+    const activeUsersLast7Days = await this.userRepository.count({
+      where: {
+        lastLogin: Not(sevenDaysAgo),
+      },
+    });
+
+    // Người dùng chưa bao giờ đăng nhập
+    const neverLoggedInUsers = await this.userRepository.count({
+      where: {
+        lastLogin: IsNull(),
+      },
+    });
+
+    // Thống kê theo tháng (12 tháng gần nhất)
+    const monthlyStats = await this.userRepository
+      .createQueryBuilder('user')
+      .select("TO_CHAR(user.createdAt, 'YYYY-MM')", 'month')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.createdAt >= :twelveMonthsAgo', {
+        twelveMonthsAgo: new Date(now.getFullYear() - 1, now.getMonth(), 1),
+      })
+      .groupBy("TO_CHAR(user.createdAt, 'YYYY-MM')")
+      .orderBy('month', 'ASC')
+      .getRawMany();
+
+    const formattedMonthlyStats = monthlyStats.map((item) => ({
+      month: item.month,
+      count: parseInt(item.count),
+    }));
+
+    return {
+      totalUsers,
+      usersByRole: roleStats,
+      usersByStatus: statusStats,
+      newUsersLast30Days,
+      activeUsersLast7Days,
+      neverLoggedInUsers,
+      monthlyStats: formattedMonthlyStats,
+      generatedAt: now,
+    };
+  }
+
+  // GET STATS BY ROLE - Thống kê theo vai trò
+  async getStatsByRole(role: UserRole): Promise<any> {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Tổng số người dùng theo vai trò
+    const totalUsers = await this.userRepository.count({
+      where: { role },
+    });
+
+    // Thống kê theo trạng thái tài khoản cho vai trò này
+    const usersByStatus = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.accountStatus', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.role = :role', { role })
+      .groupBy('user.accountStatus')
+      .getRawMany();
+
+    const statusStats = usersByStatus.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<AccountStatus, number>,
+    );
+
+    // Người dùng mới trong 30 ngày qua
+    const newUsersLast30Days = await this.userRepository.count({
+      where: {
+        role,
+        createdAt: Not(thirtyDaysAgo),
+      },
+    });
+
+    // Người dùng đăng nhập trong 7 ngày qua
+    const activeUsersLast7Days = await this.userRepository.count({
+      where: {
+        role,
+        lastLogin: Not(sevenDaysAgo),
+      },
+    });
+
+    // Người dùng chưa bao giờ đăng nhập
+    const neverLoggedInUsers = await this.userRepository.count({
+      where: {
+        role,
+        lastLogin: IsNull(),
+      },
+    });
+
+    return {
+      role,
+      totalUsers,
+      usersByStatus: statusStats,
+      newUsersLast30Days,
+      activeUsersLast7Days,
+      neverLoggedInUsers,
+      generatedAt: now,
+    };
+  }
+
+  // GET STATS BY STATUS - Thống kê theo trạng thái
+  async getStatsByStatus(status: AccountStatus): Promise<any> {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Tổng số người dùng theo trạng thái
+    const totalUsers = await this.userRepository.count({
+      where: { accountStatus: status },
+    });
+
+    // Thống kê theo vai trò cho trạng thái này
+    const usersByRole = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.accountStatus = :status', { status })
+      .groupBy('user.role')
+      .getRawMany();
+
+    const roleStats = usersByRole.reduce(
+      (acc, item) => {
+        acc[item.role] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<UserRole, number>,
+    );
+
+    // Người dùng mới trong 30 ngày qua
+    const newUsersLast30Days = await this.userRepository.count({
+      where: {
+        accountStatus: status,
+        createdAt: Not(thirtyDaysAgo),
+      },
+    });
+
+    // Người dùng đăng nhập trong 7 ngày qua
+    const activeUsersLast7Days = await this.userRepository.count({
+      where: {
+        accountStatus: status,
+        lastLogin: Not(sevenDaysAgo),
+      },
+    });
+
+    return {
+      status,
+      totalUsers,
+      usersByRole: roleStats,
+      newUsersLast30Days,
+      activeUsersLast7Days,
+      generatedAt: now,
+    };
+  }
+
+  // GET STATS BY DATE RANGE - Thống kê theo khoảng thời gian
+  async getStatsByDateRange(startDate: string, endDate: string): Promise<any> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Set to end of day
+
+    // Validate dates
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    if (start > end) {
+      throw new Error('Start date must be before end date');
+    }
+
+    // Tổng số người dùng trong khoảng thời gian
+    const totalUsers = await this.userRepository.count({
+      where: {
+        createdAt: Between(start, end),
+      },
+    });
+
+    // Thống kê theo vai trò
+    const usersByRole = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.createdAt >= :start AND user.createdAt <= :end', {
+        start,
+        end,
+      })
+      .groupBy('user.role')
+      .getRawMany();
+
+    const roleStats = usersByRole.reduce(
+      (acc, item) => {
+        acc[item.role] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<UserRole, number>,
+    );
+
+    // Thống kê theo trạng thái
+    const usersByStatus = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.accountStatus', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.createdAt >= :start AND user.createdAt <= :end', {
+        start,
+        end,
+      })
+      .groupBy('user.accountStatus')
+      .getRawMany();
+
+    const statusStats = usersByStatus.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<AccountStatus, number>,
+    );
+
+    // Thống kê theo ngày
+    const dailyStats = await this.userRepository
+      .createQueryBuilder('user')
+      .select("TO_CHAR(user.createdAt, 'YYYY-MM-DD')", 'date')
+      .addSelect('COUNT(*)', 'count')
+      .where('user.createdAt >= :start AND user.createdAt <= :end', {
+        start,
+        end,
+      })
+      .groupBy("TO_CHAR(user.createdAt, 'YYYY-MM-DD')")
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    const formattedDailyStats = dailyStats.map((item) => ({
+      date: item.date,
+      count: parseInt(item.count),
+    }));
+
+    return {
+      startDate,
+      endDate,
+      totalUsers,
+      usersByRole: roleStats,
+      usersByStatus: statusStats,
+      dailyStats: formattedDailyStats,
+      generatedAt: new Date(),
     };
   }
 
