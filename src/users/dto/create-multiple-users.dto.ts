@@ -12,12 +12,12 @@ import {
 } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
-import { Gender } from '../../readers/entities/reader.entity';
 import { Type } from 'class-transformer';
+import { Gender } from '../../readers/entities/reader.entity';
 
 export class CreateUserItemDto {
   @ApiProperty({
-    description: 'Mã sinh viên/giảng viên/nhân viên',
+    description: 'Mã Học Sinh/giảng viên/nhân viên',
     example: 'SV20020001',
     maxLength: 20,
   })
@@ -58,13 +58,13 @@ export class CreateUserItemDto {
   email: string;
 
   @ApiProperty({
-    description: 'Vai trò (học sinh/nhân viên/giáo viên)',
-    example: 'học sinh',
-    enum: ['học sinh', 'nhân viên', 'giáo viên'],
+    description: 'Vai trò (Học Sinh/nhân viên/giáo viên)',
+    example: 'Học Sinh',
+    enum: ['Học Sinh', 'nhân viên', 'giáo viên'],
   })
   @IsNotEmpty()
   @IsString()
-  @IsEnum(['học sinh', 'nhân viên', 'giáo viên'])
+  @IsEnum(['Học Sinh', 'nhân viên', 'giáo viên'])
   vaiTro: string;
 
   @ApiProperty({
@@ -116,13 +116,13 @@ export class CreateUserItemDto {
   soDienThoai: string;
 
   @ApiProperty({
-    description: 'Loại độc giả (học sinh/giáo viên/nhân viên)',
-    example: 'học sinh',
-    enum: ['học sinh', 'giáo viên', 'nhân viên'],
+    description: 'Loại độc giả (Học Sinh/giáo viên/nhân viên)',
+    example: 'Học Sinh',
+    enum: ['Học Sinh', 'giáo viên', 'nhân viên'],
   })
   @IsNotEmpty()
   @IsString()
-  @IsEnum(['học sinh', 'giáo viên', 'nhân viên'])
+  @IsEnum(['Học Sinh', 'giáo viên', 'nhân viên'])
   loaiDocGia: string;
 
   @ApiProperty({

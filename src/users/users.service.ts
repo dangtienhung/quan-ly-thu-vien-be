@@ -859,7 +859,7 @@ export class UsersService {
   // Helper methods
   private mapVaiTroToUserRole(vaiTro: string): UserRole {
     switch (vaiTro) {
-      case 'học sinh':
+      case 'Học Sinh':
         return UserRole.READER;
       case 'nhân viên':
       case 'giáo viên':
@@ -882,7 +882,7 @@ export class UsersService {
 
   private mapLoaiDocGiaToReaderType(loaiDocGia: string): ReaderTypeName {
     switch (loaiDocGia) {
-      case 'học sinh':
+      case 'Học Sinh':
         return ReaderTypeName.STUDENT;
       case 'giáo viên':
         return ReaderTypeName.TEACHER;

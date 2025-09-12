@@ -1,4 +1,3 @@
-import { AccountStatus, UserRole } from '../entities/user.entity';
 import {
   IsEmail,
   IsEnum,
@@ -9,12 +8,13 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { AccountStatus, UserRole } from '../entities/user.entity';
 
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({
-    description: 'Mã người dùng (mã sinh viên/giảng viên/nhân viên)',
+    description: 'Mã người dùng (mã Học Sinh/giảng viên/nhân viên)',
     example: 'GV001 hoặc SV20020001 hoặc NV001',
     maxLength: 20,
   })

@@ -30,7 +30,7 @@ export class User {
   id: string;
 
   @ApiProperty({
-    description: 'Mã người dùng (mã sinh viên/giảng viên/nhân viên)',
+    description: 'Mã người dùng (mã Học Sinh/giảng viên/nhân viên)',
     example: 'GV001 hoặc SV20020001 hoặc NV001',
     maxLength: 20,
     required: false,

@@ -74,13 +74,13 @@ POST /api/users/upload-excel
       "Tên đăng nhập": "nguyen_van_a",
       "Mật khẩu": "123456",
       "Email": "nguyenvana@example.com",
-      "Vai trò": "học sinh",
+      "Vai trò": "Học Sinh",
       "Trạng thái": "hoạt động",
       "Ngày sinh": "15/06/1995",
       "Giới tính": "male",
       "Địa chỉ": "123 Đường ABC, Quận 1, TP.HCM",
       "Số điện thoại": "0123456789",
-      "Loại độc giả": "học sinh",
+      "Loại độc giả": "Học Sinh",
       "Ngày bắt đầu": "01/01/2024",
       "Ngày kết thúc": "31/12/2025",
       "_rowIndex": 2
@@ -107,20 +107,20 @@ POST /api/users/upload-excel
 | Tên đăng nhập | Username | nguyen_van_a |
 | Mật khẩu | Password (6-255 ký tự) | 123456 |
 | Email | Địa chỉ email | nguyenvana@example.com |
-| Vai trò | Vai trò trong hệ thống | học sinh, nhân viên, giáo viên |
+| Vai trò | Vai trò trong hệ thống | Học Sinh, nhân viên, giáo viên |
 | Trạng thái | Trạng thái hoạt động | hoạt động, bị cấm |
 | Ngày sinh | Ngày sinh (dd/mm/yyyy) | 15/06/1995 |
 | Giới tính | Giới tính | male, female, other |
 | Địa chỉ | Địa chỉ nhà | 123 Đường ABC, Quận 1, TP.HCM |
 | Số điện thoại | Số điện thoại | 0123456789 |
-| Loại độc giả | Loại độc giả | học sinh, giáo viên, nhân viên |
+| Loại độc giả | Loại độc giả | Học Sinh, giáo viên, nhân viên |
 | Ngày bắt đầu | Ngày bắt đầu thẻ (dd/mm/yyyy) | 01/01/2024 |
 | Ngày kết thúc | Ngày kết thúc thẻ (dd/mm/yyyy) | 31/12/2025 |
 
 ### Giá trị enum được chấp nhận:
 
 #### Vai trò:
-- `học sinh`
+- `Học Sinh`
 - `nhân viên`
 - `giáo viên`
 
@@ -134,7 +134,7 @@ POST /api/users/upload-excel
 - `other`
 
 #### Loại độc giả:
-- `học sinh`
+- `Học Sinh`
 - `giáo viên`
 - `nhân viên`
 

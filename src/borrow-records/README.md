@@ -182,7 +182,7 @@ GET /borrow-records/stats/overdue
       { "daysOverdue": 30, "count": 5 }
     ],
     "byReaderType": [
-      { "readerType": "Sinh viên", "count": 10 },
+      { "readerType": "Học Sinh", "count": 10 },
       { "readerType": "Giảng viên", "count": 3 },
       { "readerType": "Nhân viên", "count": 2 }
     ]
@@ -225,7 +225,7 @@ POST /borrow-records/update-overdue-status
       { "month": "2024-02", "count": 30 }
     ],
     "byReaderType": [
-      { "readerType": "Sinh viên", "count": 80 },
+      { "readerType": "Học Sinh", "count": 80 },
       { "readerType": "Giảng viên", "count": 45 },
       { "readerType": "Nhân viên", "count": 25 }
     ],

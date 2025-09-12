@@ -59,7 +59,7 @@ export class CreateReaderTypeDto {
 
   @ApiProperty({
     description: 'Mô tả về loại độc giả',
-    example: 'Sinh viên đại học có thể mượn tối đa 5 cuốn trong 14 ngày',
+    example: 'Học Sinh đại học có thể mượn tối đa 5 cuốn trong 14 ngày',
     required: false,
   })
   @IsOptional()
