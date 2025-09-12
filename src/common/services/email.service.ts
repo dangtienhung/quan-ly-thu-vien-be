@@ -1,7 +1,7 @@
 import * as nodemailer from 'nodemailer';
 
-import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
@@ -21,14 +21,27 @@ export class EmailService {
     email: string,
     resetToken: string,
     userName: string,
+    userRole: 'admin' | 'reader',
   ) {
-    const resetUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token=${resetToken}`;
+    // Xác định URL frontend dựa trên role
+    const frontendUrl =
+      userRole === 'admin'
+        ? this.configService.get<string>(
+            'FRONTEND_URL_ADMIN',
+            'http://localhost:5173',
+          )
+        : this.configService.get<string>(
+            'FRONTEND_URL',
+            'http://localhost:3000',
+          );
+
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
       from: this.configService.get<string>('NODEMAILER_USER'),
       to: email,
       subject: 'Đặt lại mật khẩu - Hệ thống Quản lý Thư viện',
-      html: this.getResetPasswordEmailTemplate(userName, resetUrl),
+      html: this.getResetPasswordEmailTemplate(userName, resetUrl, userRole),
     };
 
     try {
@@ -43,6 +56,7 @@ export class EmailService {
   private getResetPasswordEmailTemplate(
     userName: string,
     resetUrl: string,
+    userRole: 'admin' | 'reader',
   ): string {
     return `
       <!DOCTYPE html>
@@ -127,7 +141,7 @@ export class EmailService {
           <div class="content">
             <p>Xin chào <strong>${userName}</strong>,</p>
 
-            <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn trong hệ thống Quản lý Thư viện.</p>
+            <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>${userRole === 'admin' ? 'Quản trị viên' : 'Độc giả'}</strong> của bạn trong hệ thống Quản lý Thư viện.</p>
 
             <p>Để đặt lại mật khẩu, vui lòng nhấp vào nút bên dưới:</p>
 
@@ -164,14 +178,32 @@ export class EmailService {
     email: string,
     userName: string,
     tempPassword: string,
+    userRole: 'admin' | 'reader' = 'reader',
   ) {
-    const loginUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/login`;
+    // Xác định URL frontend dựa trên role
+    const frontendUrl =
+      userRole === 'admin'
+        ? this.configService.get<string>(
+            'FRONTEND_URL_ADMIN',
+            'http://localhost:5173',
+          )
+        : this.configService.get<string>(
+            'FRONTEND_URL',
+            'http://localhost:3000',
+          );
+
+    const loginUrl = `${frontendUrl}/login`;
 
     const mailOptions = {
       from: this.configService.get<string>('NODEMAILER_USER'),
       to: email,
       subject: 'Chào mừng đến với Hệ thống Quản lý Thư viện',
-      html: this.getWelcomeEmailTemplate(userName, tempPassword, loginUrl),
+      html: this.getWelcomeEmailTemplate(
+        userName,
+        tempPassword,
+        loginUrl,
+        userRole,
+      ),
     };
 
     try {
@@ -187,6 +219,7 @@ export class EmailService {
     userName: string,
     tempPassword: string,
     loginUrl: string,
+    userRole: 'admin' | 'reader',
   ): string {
     return `
       <!DOCTYPE html>

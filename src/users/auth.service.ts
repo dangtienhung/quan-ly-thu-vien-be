@@ -120,6 +120,7 @@ export class AuthService {
         user.email,
         resetToken,
         user.username,
+        user.role,
       );
 
       return {
