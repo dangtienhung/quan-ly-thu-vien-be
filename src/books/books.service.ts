@@ -6,6 +6,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import slug from 'slug';
 import { EBook } from 'src/ebooks/entities/ebook.entity';
 import { Repository } from 'typeorm';
 import { AuthorsService } from '../authors/authors.service';
@@ -88,7 +89,18 @@ export class BooksService {
 
     // Tạo sách
     const book = this.bookRepository.create(createBookDto);
+
+    // Tạo slug tạm thời trước khi save (với timestamp để tránh trùng lặp)
+    const baseSlug = slug(createBookDto.title, { lower: true });
+    const timestamp = Date.now().toString().slice(-6); // 6 ký tự cuối của timestamp
+    const tempSlug = `${baseSlug}-${timestamp}`;
+    book.slug = tempSlug;
+
     const savedBook = await this.bookRepository.save(book);
+
+    // Tạo slug với ID sau khi đã có ID
+    savedBook.generateSlugWithId();
+    const updatedBook = await this.bookRepository.save(savedBook);
 
     // Tạo mối quan hệ với tác giả thông qua BookAuthors
     if (createBookDto.author_ids && createBookDto.author_ids.length > 0) {
@@ -107,7 +119,7 @@ export class BooksService {
       });
     }
 
-    return savedBook;
+    return updatedBook;
   }
 
   // Lấy danh sách có phân trang
@@ -418,6 +430,12 @@ export class BooksService {
 
     // Cập nhật thông tin sách
     Object.assign(book, updateBookDto);
+
+    // Tạo slug với ID nếu title được cập nhật
+    if (updateBookDto.title) {
+      book.generateSlugWithId();
+    }
+
     const updatedBook = await this.bookRepository.save(book);
 
     // Lấy thông tin tác giả
@@ -559,7 +577,23 @@ export class BooksService {
   // Ebook Methods
   async createMany(createBookDtos: CreateBookDto[]): Promise<Book[]> {
     const books = this.bookRepository.create(createBookDtos);
-    return await this.bookRepository.save(books);
+
+    // Tạo slug tạm thời cho tất cả books (với timestamp để tránh trùng lặp)
+    books.forEach((book, index) => {
+      const baseSlug = slug(book.title, { lower: true });
+      const timestamp = Date.now().toString().slice(-6); // 6 ký tự cuối của timestamp
+      const tempSlug = `${baseSlug}-${timestamp}-${index}`; // Thêm index để đảm bảo unique
+      book.slug = tempSlug;
+    });
+
+    const savedBooks = await this.bookRepository.save(books);
+
+    // Tạo slug với ID cho tất cả books
+    savedBooks.forEach((book) => {
+      book.generateSlugWithId();
+    });
+
+    return await this.bookRepository.save(savedBooks);
   }
 
   // Cập nhật số lượt xem sách

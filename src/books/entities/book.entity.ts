@@ -1,5 +1,4 @@
 import {
-  BeforeInsert,
   BeforeUpdate,
   Column,
   CreateDateColumn,
@@ -11,10 +10,10 @@ import {
 } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
+import slug from 'slug';
 import { BookCategory } from '../../book-categories/entities/book-category.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { Publisher } from '../../publishers/entities/publisher.entity';
-import slug from 'slug';
 
 export enum BookType {
   PHYSICAL = 'physical',
@@ -189,10 +188,28 @@ export class Book {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Tự động tạo slug từ title
-  @BeforeInsert()
+  // Tự động tạo slug từ title và thêm 5 ký tự cuối cùng của ID
   @BeforeUpdate()
   generateSlug() {
-    this.slug = slug(this.title, { lower: true });
+    const baseSlug = slug(this.title, { lower: true });
+    if (this.id) {
+      // Lấy 5 ký tự cuối cùng của ID
+      const idSuffix = this.id.slice(-5);
+      this.slug = `${baseSlug}-${idSuffix}`;
+    } else {
+      this.slug = baseSlug;
+    }
+  }
+
+  // Method để tạo slug với ID (được gọi từ service)
+  generateSlugWithId() {
+    const baseSlug = slug(this.title, { lower: true });
+    if (this.id) {
+      // Lấy 5 ký tự cuối cùng của ID
+      const idSuffix = this.id.slice(-5);
+      this.slug = `${baseSlug}-${idSuffix}`;
+    } else {
+      this.slug = baseSlug;
+    }
   }
 }
