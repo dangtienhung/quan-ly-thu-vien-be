@@ -13,6 +13,7 @@ import {
 } from '../common/dto/pagination.dto';
 import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
+import { CreateSimplePublisherDto } from './dto/create-simple-publisher.dto';
 import { FilterPublishersDto } from './dto/filter-publishers.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
@@ -24,10 +25,39 @@ export class PublishersService {
     private readonly publisherRepository: Repository<Publisher>,
   ) {}
 
+  // Helper function để xử lý dữ liệu publisher
+  private processPublisherData(data: any, existingPublisher?: Publisher) {
+    return {
+      ...data,
+      publisherName: data.publisherName || null,
+      address: data.address || null,
+      phone: data.phone || null,
+      website: data.website || null,
+      description: data.description || null,
+      country: data.country || null,
+      establishedDate: data.establishedDate || null,
+      isActive: data.isActive ?? existingPublisher?.isActive ?? true, // Default to true if not provided
+    };
+  }
+
   // Tạo mới nhà xuất bản
   async create(createPublisherDto: CreatePublisherDto): Promise<Publisher> {
-    const publisher = this.publisherRepository.create(createPublisherDto);
-    return await this.publisherRepository.save(publisher);
+    const processedData = this.processPublisherData(createPublisherDto);
+    const publisher = this.publisherRepository.create(processedData);
+    const savedPublisher = await this.publisherRepository.save(publisher);
+    return Array.isArray(savedPublisher) ? savedPublisher[0] : savedPublisher;
+  }
+
+  // Tạo nhà xuất bản đơn giản (chỉ cần email)
+  async createSimple(
+    createSimplePublisherDto: CreateSimplePublisherDto,
+  ): Promise<Publisher> {
+    const publisher = this.publisherRepository.create({
+      ...createSimplePublisherDto,
+      isActive: true, // Default to true
+    });
+    const savedPublisher = await this.publisherRepository.save(publisher);
+    return Array.isArray(savedPublisher) ? savedPublisher[0] : savedPublisher;
   }
 
   // Tạo nhiều nhà xuất bản cùng lúc
@@ -52,8 +82,10 @@ export class PublishersService {
       error: string;
     }> = [];
 
-    // Kiểm tra trùng lặp tên nhà xuất bản trong danh sách đầu vào
-    const publisherNames = publishers.map((p) => p.publisherName);
+    // Kiểm tra trùng lặp tên nhà xuất bản trong danh sách đầu vào (chỉ với những tên không null)
+    const publisherNames = publishers
+      .map((p) => p.publisherName)
+      .filter((name) => name != null);
     const duplicateNames = publisherNames.filter(
       (name, index) => publisherNames.indexOf(name) !== index,
     );
@@ -64,36 +96,51 @@ export class PublishersService {
       );
     }
 
-    // Kiểm tra tên nhà xuất bản đã tồn tại trong database
-    const existingPublishers = await this.publisherRepository.find({
-      where: publisherNames.map((name) => ({ publisherName: name })),
-    });
+    // Kiểm tra tên nhà xuất bản đã tồn tại trong database (chỉ với những tên không null)
+    let existingPublishers: Publisher[] = [];
+    let existingNames: string[] = [];
 
-    const existingNames = existingPublishers.map((p) => p.publisherName);
+    if (publisherNames.length > 0) {
+      existingPublishers = await this.publisherRepository.find({
+        where: publisherNames.map((name) => ({ publisherName: name })),
+      });
+      existingNames = existingPublishers
+        .map((p) => p.publisherName)
+        .filter((name): name is string => name != null);
+    }
 
     // Xử lý từng nhà xuất bản
     for (let i = 0; i < publishers.length; i++) {
       const publisherData = publishers[i];
 
       try {
-        // Kiểm tra tên đã tồn tại
-        if (existingNames.includes(publisherData.publisherName)) {
+        // Kiểm tra tên đã tồn tại (chỉ khi có tên)
+        if (
+          publisherData.publisherName &&
+          existingNames.includes(publisherData.publisherName)
+        ) {
           errors.push({
             index: i,
-            publisherName: publisherData.publisherName,
+            publisherName: publisherData.publisherName || 'Không có tên',
             error: `Tên nhà xuất bản '${publisherData.publisherName}' đã tồn tại trong hệ thống`,
           });
           continue;
         }
 
+        // Xử lý dữ liệu: chuyển empty string thành null, giữ lại các giá trị có ý nghĩa
+        const processedData = this.processPublisherData(publisherData);
+
         // Tạo nhà xuất bản mới
-        const publisher = this.publisherRepository.create(publisherData);
+        const publisher = this.publisherRepository.create(processedData);
         const savedPublisher = await this.publisherRepository.save(publisher);
-        success.push(savedPublisher);
+        const result = Array.isArray(savedPublisher)
+          ? savedPublisher[0]
+          : savedPublisher;
+        success.push(result);
       } catch (error) {
         errors.push({
           index: i,
-          publisherName: publisherData.publisherName,
+          publisherName: publisherData.publisherName || 'Không có tên',
           error: error.message || 'Lỗi không xác định khi tạo nhà xuất bản',
         });
       }
@@ -281,7 +328,11 @@ export class PublishersService {
     updatePublisherDto: UpdatePublisherDto,
   ): Promise<Publisher> {
     const publisher = await this.findOne(id);
-    Object.assign(publisher, updatePublisherDto);
+    const processedData = this.processPublisherData(
+      updatePublisherDto,
+      publisher,
+    );
+    Object.assign(publisher, processedData);
     return await this.publisherRepository.save(publisher);
   }
 
@@ -291,7 +342,11 @@ export class PublishersService {
     updatePublisherDto: UpdatePublisherDto,
   ): Promise<Publisher> {
     const publisher = await this.findBySlug(slugParam);
-    Object.assign(publisher, updatePublisherDto);
+    const processedData = this.processPublisherData(
+      updatePublisherDto,
+      publisher,
+    );
+    Object.assign(publisher, processedData);
     return await this.publisherRepository.save(publisher);
   }
 
@@ -323,6 +378,10 @@ export class PublishersService {
     for (const publisher of publishers) {
       if (publisher.publisherName) {
         publisher.slug = slug(publisher.publisherName, { lower: true });
+        await this.publisherRepository.save(publisher);
+      } else {
+        // Nếu không có publisherName, set slug = null
+        publisher.slug = undefined;
         await this.publisherRepository.save(publisher);
       }
     }

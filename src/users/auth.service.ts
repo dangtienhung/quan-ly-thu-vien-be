@@ -28,9 +28,7 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string): Promise<User | null> {
-    console.log('🚀 ~ AuthService ~ validateUser ~ username:', username);
     let user = await this.userRepository.findOne({ where: { username } });
-    console.log('🚀 ~ AuthService ~ validateUser ~ user:', user);
 
     // Nếu không tìm thấy theo username, thử tìm theo email
     if (!user) {

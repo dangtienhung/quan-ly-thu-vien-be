@@ -12,7 +12,7 @@ import {
 
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreatePublisherDto {
+export class CreatePublisherNewDto {
   @ApiProperty({
     description: 'Tên nhà xuất bản',
     example: 'Nhà xuất bản Giáo dục Việt Nam',

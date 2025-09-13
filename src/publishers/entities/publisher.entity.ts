@@ -23,9 +23,10 @@ export class Publisher {
   @ApiProperty({
     description: 'Tên nhà xuất bản',
     example: 'Nhà xuất bản Giáo dục Việt Nam',
+    required: false,
   })
-  @Column({ type: 'varchar', length: 255 })
-  publisherName: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  publisherName?: string;
 
   @ApiProperty({
     description: 'Slug cho URL thân thiện (tự động tạo từ tên)',
@@ -38,19 +39,21 @@ export class Publisher {
   @ApiProperty({
     description: 'Địa chỉ nhà xuất bản',
     example: '123 Đường ABC, Quận 1, TP.HCM',
+    required: false,
   })
-  @Column({ type: 'text' })
-  address: string;
+  @Column({ type: 'text', nullable: true })
+  address?: string;
 
   @ApiProperty({
     description: 'Số điện thoại liên hệ',
     example: '0123456789',
+    required: false,
   })
-  @Column({ type: 'varchar', length: 20 })
-  phone: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string;
 
   @ApiProperty({
-    description: 'Email liên hệ',
+    description: 'Email liên hệ (bắt buộc)',
     example: 'contact@publisher.com',
   })
   @Column({ type: 'varchar', length: 255 })
@@ -73,11 +76,12 @@ export class Publisher {
   description?: string;
 
   @ApiProperty({
-    description: 'Trạng thái hoạt động',
+    description: 'Trạng thái hoạt động (mặc định: true)',
     example: true,
+    required: false,
   })
   @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  isActive?: boolean;
 
   @ApiProperty({
     description: 'Ngày thành lập',
@@ -119,6 +123,8 @@ export class Publisher {
   generateSlug() {
     if (this.publisherName) {
       this.slug = slug(this.publisherName, { lower: true });
+    } else {
+      this.slug = undefined;
     }
   }
 }

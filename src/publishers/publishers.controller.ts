@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateManyPublishersDto } from './dto/create-many-publishers.dto';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
+import { CreateSimplePublisherDto } from './dto/create-simple-publisher.dto';
 import { FilterPublishersDto } from './dto/filter-publishers.dto';
 import { UpdatePublisherDto } from './dto/update-publisher.dto';
 import { Publisher } from './entities/publisher.entity';
@@ -58,6 +59,25 @@ export class PublishersController {
     @Body() createPublisherDto: CreatePublisherDto,
   ): Promise<Publisher> {
     return this.publishersService.create(createPublisherDto);
+  }
+
+  @Post('simple')
+  @ApiOperation({ summary: 'Tạo nhà xuất bản đơn giản (chỉ cần email)' })
+  @ApiBody({
+    type: CreateSimplePublisherDto,
+    description: 'Chỉ cần email để tạo nhà xuất bản',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo nhà xuất bản đơn giản thành công.',
+    type: Publisher,
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ.' })
+  @HttpCode(HttpStatus.CREATED)
+  async createSimple(
+    @Body() createSimplePublisherDto: CreateSimplePublisherDto,
+  ): Promise<Publisher> {
+    return await this.publishersService.createSimple(createSimplePublisherDto);
   }
 
   @Post('bulk')

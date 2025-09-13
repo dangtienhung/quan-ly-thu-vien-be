@@ -1,7 +1,0 @@
-### Test Sync API
-GET http://localhost:3000/api/users/test-sync
-
-### Sync userCode to cardNumber
-POST http://localhost:3000/api/users/sync-usercode-to-cardnumber
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
