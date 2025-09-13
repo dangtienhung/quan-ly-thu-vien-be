@@ -11,6 +11,8 @@ import {
   PaginationQueryDto,
 } from '../common/dto/pagination.dto';
 import { CreateBorrowRecordDto } from './dto/create-borrow-record.dto';
+import { FindByReaderWithSearchDto } from './dto/find-by-reader-with-search.dto';
+import { FindByStatusWithSearchDto } from './dto/find-by-status-with-search.dto';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { UpdateBorrowRecordDto } from './dto/update-borrow-record.dto';
 import { BorrowRecord, BorrowStatus } from './entities/borrow-record.entity';
@@ -142,18 +144,35 @@ export class BorrowRecordsService {
   // Lấy bản ghi mượn sách theo trạng thái
   async findByStatus(
     status: BorrowStatus,
-    paginationQuery: PaginationQueryDto,
+    paginationQuery: FindByStatusWithSearchDto,
   ): Promise<PaginatedResponseDto<BorrowRecord>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, q } = paginationQuery;
     const skip = (page - 1) * limit;
 
-    const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
-      where: { status },
-      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
-      order: { created_at: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Sử dụng QueryBuilder để hỗ trợ search
+    const queryBuilder = this.borrowRecordRepository
+      .createQueryBuilder('borrowRecord')
+      .leftJoinAndSelect('borrowRecord.reader', 'reader')
+      .leftJoinAndSelect('borrowRecord.physicalCopy', 'physicalCopy')
+      .leftJoinAndSelect('physicalCopy.book', 'book')
+      .leftJoinAndSelect('borrowRecord.librarian', 'librarian')
+      .where('borrowRecord.status = :status', { status });
+
+    // Thêm điều kiện search với OR
+    if (q) {
+      queryBuilder.andWhere(
+        '(book.title ILIKE :searchTerm OR reader.fullName ILIKE :searchTerm)',
+        { searchTerm: `%${q}%` },
+      );
+    }
+
+    // Thêm pagination và ordering
+    queryBuilder
+      .orderBy('borrowRecord.created_at', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, totalItems] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;
@@ -174,18 +193,35 @@ export class BorrowRecordsService {
   // Lấy bản ghi mượn sách theo độc giả
   async findByReader(
     readerId: string,
-    paginationQuery: PaginationQueryDto,
+    paginationQuery: FindByReaderWithSearchDto,
   ): Promise<PaginatedResponseDto<BorrowRecord>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, q } = paginationQuery;
     const skip = (page - 1) * limit;
 
-    const [data, totalItems] = await this.borrowRecordRepository.findAndCount({
-      where: { reader_id: readerId },
-      relations: ['reader', 'physicalCopy', 'physicalCopy.book', 'librarian'],
-      order: { created_at: 'DESC' },
-      skip,
-      take: limit,
-    });
+    // Sử dụng QueryBuilder để hỗ trợ search
+    const queryBuilder = this.borrowRecordRepository
+      .createQueryBuilder('borrowRecord')
+      .leftJoinAndSelect('borrowRecord.reader', 'reader')
+      .leftJoinAndSelect('borrowRecord.physicalCopy', 'physicalCopy')
+      .leftJoinAndSelect('physicalCopy.book', 'book')
+      .leftJoinAndSelect('borrowRecord.librarian', 'librarian')
+      .where('borrowRecord.reader_id = :readerId', { readerId });
+
+    // Thêm điều kiện search với OR
+    if (q) {
+      queryBuilder.andWhere(
+        '(book.title ILIKE :searchTerm OR reader.fullName ILIKE :searchTerm)',
+        { searchTerm: `%${q}%` },
+      );
+    }
+
+    // Thêm pagination và ordering
+    queryBuilder
+      .orderBy('borrowRecord.created_at', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, totalItems] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / limit);
     const hasNextPage = page < totalPages;

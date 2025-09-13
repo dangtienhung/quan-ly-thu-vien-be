@@ -28,8 +28,8 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { BorrowRecordsService } from './borrow-records.service';
 import { CreateBorrowRecordDto } from './dto/create-borrow-record.dto';
-import { FindByReaderDto } from './dto/find-by-reader.dto';
-import { FindByStatusDto } from './dto/find-by-status.dto';
+import { FindByReaderWithSearchDto } from './dto/find-by-reader-with-search.dto';
+import { FindByStatusWithSearchDto } from './dto/find-by-status-with-search.dto';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { UpdateBorrowRecordDto } from './dto/update-borrow-record.dto';
 import { BorrowRecord, BorrowStatus } from './entities/borrow-record.entity';
@@ -135,13 +135,19 @@ export class BorrowRecordsController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên sách hoặc tên người dùng đã mượn',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách bản ghi mượn sách theo trạng thái thành công.',
   })
   async findByStatus(
     @Param('status') status: BorrowStatus,
-    @Query() paginationQuery: FindByStatusDto,
+    @Query() paginationQuery: FindByStatusWithSearchDto,
   ): Promise<PaginatedResponseDto<BorrowRecord>> {
     return this.borrowRecordsService.findByStatus(status, paginationQuery);
   }
@@ -161,13 +167,19 @@ export class BorrowRecordsController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên sách hoặc tên người dùng đã mượn',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách bản ghi mượn sách theo độc giả thành công.',
   })
   async findByReader(
     @Param('readerId') readerId: string,
-    @Query() paginationQuery: FindByReaderDto,
+    @Query() paginationQuery: FindByReaderWithSearchDto,
   ): Promise<PaginatedResponseDto<BorrowRecord>> {
     return this.borrowRecordsService.findByReader(readerId, paginationQuery);
   }
