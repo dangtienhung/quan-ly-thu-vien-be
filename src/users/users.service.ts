@@ -396,7 +396,7 @@ export class UsersService {
               reader: {
                 id: reader.id,
                 fullName: reader.fullName,
-                cardNumber: reader.cardNumber,
+                cardNumber: reader.cardNumber || '',
               },
               index: globalIndex,
             });
@@ -491,13 +491,13 @@ export class UsersService {
       userId: userId,
       readerTypeId: readerType.id,
       fullName: readerData.fullName,
-      dob: readerData.dob,
-      gender: readerData.gender,
-      address: readerData.address,
-      phone: readerData.phone,
-      cardNumber: readerData.cardNumber,
-      cardIssueDate: readerData.cardIssueDate,
-      cardExpiryDate: readerData.cardExpiryDate,
+      dob: readerData.dob || null,
+      gender: readerData.gender || null,
+      address: readerData.address || null,
+      phone: readerData.phone || null,
+      cardNumber: readerData.cardNumber || null,
+      cardIssueDate: readerData.cardIssueDate || null,
+      cardExpiryDate: readerData.cardExpiryDate || null,
       isActive: true,
     });
 
@@ -512,7 +512,7 @@ export class UsersService {
       .orderBy('reader.cardNumber', 'DESC')
       .getOne();
 
-    return lastCard ? lastCard.cardNumber : null;
+    return lastCard?.cardNumber || null;
   }
 
   // GET READER TYPES - Lấy danh sách loại độc giả
@@ -1000,7 +1000,7 @@ export class UsersService {
       .getOne();
 
     let nextNumber = 1;
-    if (lastCard) {
+    if (lastCard && lastCard.cardNumber) {
       const lastNumber = parseInt(lastCard.cardNumber.replace(baseNumber, ''));
       nextNumber = lastNumber + 1;
     }
@@ -1115,7 +1115,7 @@ export class UsersService {
       .getOne();
 
     let nextNumber = 1;
-    if (lastCard) {
+    if (lastCard && lastCard.cardNumber) {
       const lastNumber = parseInt(lastCard.cardNumber.replace(baseNumber, ''));
       nextNumber = lastNumber + 1;
     }

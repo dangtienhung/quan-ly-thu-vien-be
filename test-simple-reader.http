@@ -1,0 +1,39 @@
+### Test Simple Reader Creation
+
+### 1. Create a simple reader with minimal data
+POST http://localhost:8002/api/users/81adde32-0f3e-48b5-a537-2e9b03a00694/reader
+Content-Type: application/json
+
+{
+    "userId": "81adde32-0f3e-48b5-a537-2e9b03a00694",
+    "fullName": "hung 1",
+    "cardNumber": "PH0011",
+    "readerTypeName": "staff"
+}
+
+### 2. Create a reader with even less data
+POST http://localhost:8002/api/users/81adde32-0f3e-48b5-a537-2e9b03a00694/reader
+Content-Type: application/json
+
+{
+    "userId": "81adde32-0f3e-48b5-a537-2e9b03a00694",
+    "fullName": "hung 2",
+    "readerTypeName": "staff"
+}
+
+### 3. Create a reader with all fields
+POST http://localhost:8002/api/users/81adde32-0f3e-48b5-a537-2e9b03a00694/reader
+Content-Type: application/json
+
+{
+    "userId": "81adde32-0f3e-48b5-a537-2e9b03a00694",
+    "fullName": "hung 3",
+    "cardNumber": "PH0013",
+    "readerTypeName": "student",
+    "dob": "1995-06-15",
+    "gender": "male",
+    "address": "123 Đường ABC, Quận 1, TP.HCM",
+    "phone": "0123456789",
+    "cardIssueDate": "2024-01-01",
+    "cardExpiryDate": "2025-01-01"
+}

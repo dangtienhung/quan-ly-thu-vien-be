@@ -81,25 +81,28 @@ export class CreateReaderDto {
     description: 'Library card number',
     example: 'LIB2024001',
     maxLength: 50,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  cardNumber: string;
+  cardNumber?: string;
 
   @ApiProperty({
     description: 'Card issue date',
     example: '2024-01-01',
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString()
-  cardIssueDate: string;
+  cardIssueDate?: string;
 
   @ApiProperty({
     description: 'Card expiry date',
     example: '2025-01-01',
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString()
-  cardExpiryDate: string;
+  cardExpiryDate?: string;
 }

@@ -41,20 +41,19 @@ export class ReadersService {
       throw new ConflictException('Card number already exists');
     }
 
-    // Validate card dates
-    const issueDate = new Date(createReaderDto.cardIssueDate);
-    const expiryDate = new Date(createReaderDto.cardExpiryDate);
-    if (expiryDate <= issueDate) {
-      throw new BadRequestException(
-        'Card expiry date must be after issue date',
-      );
+    // Validate card dates if provided
+    if (createReaderDto.cardIssueDate && createReaderDto.cardExpiryDate) {
+      const issueDate = new Date(createReaderDto.cardIssueDate);
+      const expiryDate = new Date(createReaderDto.cardExpiryDate);
+      if (expiryDate <= issueDate) {
+        throw new BadRequestException(
+          'Card expiry date must be after issue date',
+        );
+      }
     }
 
     const reader = this.readerRepository.create(createReaderDto);
-    console.log(
-      '🚀 ~ ReadersService ~ create ~ createReaderDto:',
-      createReaderDto,
-    );
+
     return await this.readerRepository.save(reader);
   }
 
@@ -77,6 +76,7 @@ export class ReadersService {
       .createQueryBuilder('reader')
       .leftJoinAndSelect('reader.user', 'user')
       .leftJoinAndSelect('reader.readerType', 'readerType')
+      .where('user.role != :adminRole', { adminRole: 'admin' })
       .orderBy('reader.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
@@ -237,6 +237,9 @@ export class ReadersService {
   // UTILITY - Check if card is expired
   async isCardExpired(id: string): Promise<boolean> {
     const reader = await this.findOne(id);
+    if (!reader.cardExpiryDate) {
+      return false; // No expiry date means not expired
+    }
     const currentDate = new Date();
     return reader.cardExpiryDate < currentDate;
   }
@@ -254,6 +257,7 @@ export class ReadersService {
       .leftJoinAndSelect('reader.user', 'user')
       .leftJoinAndSelect('reader.readerType', 'readerType')
       .where('reader.cardExpiryDate < :currentDate', { currentDate })
+      .andWhere('user.role != :adminRole', { adminRole: 'admin' })
       .orderBy('reader.cardExpiryDate', 'ASC')
       .skip(skip)
       .take(limit)
@@ -293,6 +297,7 @@ export class ReadersService {
       .leftJoinAndSelect('reader.readerType', 'readerType')
       .where('reader.cardExpiryDate > :currentDate', { currentDate })
       .andWhere('reader.cardExpiryDate <= :futureDate', { futureDate })
+      .andWhere('user.role != :adminRole', { adminRole: 'admin' })
       .orderBy('reader.cardExpiryDate', 'ASC')
       .skip(skip)
       .take(limit)
@@ -358,11 +363,11 @@ export class ReadersService {
       .createQueryBuilder('reader')
       .leftJoinAndSelect('reader.user', 'user')
       .leftJoinAndSelect('reader.readerType', 'readerType')
-      .where('reader.fullName ILIKE :query', { query: `%${query}%` })
-      .orWhere('reader.cardNumber ILIKE :query', { query: `%${query}%` })
-      .orWhere('reader.phone ILIKE :query', { query: `%${query}%` })
-      .orWhere('user.username ILIKE :query', { query: `%${query}%` })
-      .orWhere('user.email ILIKE :query', { query: `%${query}%` })
+      .where('user.role != :adminRole', { adminRole: 'admin' })
+      .andWhere(
+        '(reader.fullName ILIKE :query OR reader.cardNumber ILIKE :query OR reader.phone ILIKE :query OR user.username ILIKE :query OR user.email ILIKE :query)',
+        { query: `%${query}%` },
+      )
       .orderBy('reader.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
@@ -397,7 +402,7 @@ export class ReadersService {
       .getOne();
 
     let nextNumber = 1;
-    if (lastReader) {
+    if (lastReader && lastReader.cardNumber) {
       const lastNumber = parseInt(lastReader.cardNumber.slice(prefix.length));
       nextNumber = lastNumber + 1;
     }

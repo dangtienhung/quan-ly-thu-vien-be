@@ -1,4 +1,5 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { Exclude, Transform } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
@@ -9,7 +10,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Exclude, Transform } from 'class-transformer';
 
 import { ReaderType } from '../../reader-types/entities/reader-type.entity';
 import { User } from '../../users/entities/user.entity';
@@ -113,23 +113,26 @@ export class Reader {
   @ApiProperty({
     description: 'Library card number',
     example: 'LIB2024001',
+    required: false,
   })
-  @Column({ type: 'varchar', length: 50, unique: true })
-  cardNumber: string;
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  cardNumber?: string;
 
   @ApiProperty({
     description: 'Card issue date',
     example: '2024-01-01',
+    required: false,
   })
-  @Column({ type: 'date' })
-  cardIssueDate: Date;
+  @Column({ type: 'date', nullable: true })
+  cardIssueDate?: Date;
 
   @ApiProperty({
     description: 'Card expiry date',
     example: '2025-01-01',
+    required: false,
   })
-  @Column({ type: 'date' })
-  cardExpiryDate: Date;
+  @Column({ type: 'date', nullable: true })
+  cardExpiryDate?: Date;
 
   @ApiProperty({
     description: 'Whether the reader account is active',
