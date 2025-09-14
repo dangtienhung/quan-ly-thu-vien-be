@@ -60,6 +60,20 @@ export class EBook {
   download_count: number;
 
   @ApiProperty({
+    description: 'Số lượt đọc (view)',
+    example: 250,
+  })
+  @Column({ type: 'int', default: 0 })
+  view_count: number;
+
+  @ApiProperty({
+    description: 'Số lượt đọc hoàn thành',
+    example: 50,
+  })
+  @Column({ type: 'int', default: 0 })
+  completed_read_count: number;
+
+  @ApiProperty({
     description: 'Ngày tạo',
     example: '2024-01-01T00:00:00.000Z',
   })

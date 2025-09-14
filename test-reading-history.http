@@ -1,0 +1,79 @@
+### Test Reading History API
+
+### 1. Tạo lịch sử đọc mới
+POST {{host}}/reading-history
+Content-Type: application/json
+
+{
+  "reader_id": "550e8400-e29b-41d4-a716-446655440000",
+  "book_id": "550e8400-e29b-41d4-a716-446655440001",
+  "status": "reading",
+  "current_page": 1,
+  "total_reading_time_seconds": 0,
+  "is_favorite": false
+}
+
+### 2. Lấy tất cả lịch sử đọc (có phân trang)
+GET {{host}}/reading-history?page=1&limit=10
+
+### 3. Lấy lịch sử đọc của một độc giả
+GET {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000?page=1&limit=10
+
+### 4. Lấy lịch sử đọc của một sách
+GET {{host}}/reading-history/book/550e8400-e29b-41d4-a716-446655440001?page=1&limit=10
+
+### 5. Lấy lịch sử đọc cụ thể (reader + book)
+GET {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/book/550e8400-e29b-41d4-a716-446655440001
+
+### 6. Lấy sách đang đọc của độc giả
+GET {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/currently-reading
+
+### 7. Lấy sách yêu thích của độc giả
+GET {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/favorites
+
+### 8. Lấy sessions đọc của độc giả
+GET {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/sessions?page=1&limit=10
+
+### 9. Cập nhật tiến độ đọc
+PATCH {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/book/550e8400-e29b-41d4-a716-446655440001/progress
+Content-Type: application/json
+
+{
+  "current_page": 25,
+  "session_duration": 1800,
+  "session_notes": "Đọc chương 3",
+  "device": "mobile"
+}
+
+### 10. Đánh dấu hoàn thành đọc sách
+PATCH {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/book/550e8400-e29b-41d4-a716-446655440001/complete
+
+### 11. Toggle sách yêu thích
+PATCH {{host}}/reading-history/reader/550e8400-e29b-41d4-a716-446655440000/book/550e8400-e29b-41d4-a716-446655440001/favorite
+
+### 12. Lấy một lịch sử đọc theo ID
+GET {{host}}/reading-history/{{readingHistoryId}}
+
+### 13. Cập nhật lịch sử đọc
+PATCH {{host}}/reading-history/{{readingHistoryId}}
+Content-Type: application/json
+
+{
+  "status": "paused",
+  "current_page": 50,
+  "is_favorite": true
+}
+
+### 14. Xóa lịch sử đọc
+DELETE {{host}}/reading-history/{{readingHistoryId}}
+
+### Test với dữ liệu thực tế (nếu có)
+### Lấy danh sách readers để test
+GET {{host}}/readers?page=1&limit=5
+
+### Lấy danh sách books để test
+GET {{host}}/books?page=1&limit=5
+
+### Variables
+@host = http://localhost:8000/api
+@readingHistoryId = 550e8400-e29b-41d4-a716-446655440002

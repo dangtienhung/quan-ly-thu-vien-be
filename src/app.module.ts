@@ -1,7 +1,8 @@
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthorsModule } from './authors/authors.module';
@@ -12,9 +13,9 @@ import { BooksModule } from './books/books.module';
 import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonModule } from './common/common.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { EbooksModule } from './ebooks/ebooks.module';
 import { FinesModule } from './fines/fines.module';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { GradeLevelsModule } from './grade-levels/grade-levels.module';
 import { ImagesModule } from './images/images.module';
 import { LocationsModule } from './locations/locations.module';
@@ -23,9 +24,9 @@ import { ProductsModule } from './products/products.module';
 import { PublishersModule } from './publishers/publishers.module';
 import { ReaderTypesModule } from './reader-types/reader-types.module';
 import { ReadersModule } from './readers/readers.module';
+import { ReadingHistoryModule } from './reading-history/reading-history.module';
 import { RenewalsModule } from './renewals/renewals.module';
 import { ReservationsModule } from './reservations/reservations.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
 
@@ -71,6 +72,7 @@ import { UsersModule } from './users/users.module';
     BookCategoriesModule,
     BookGradeLevelsModule,
     LocationsModule,
+    ReadingHistoryModule,
   ],
   controllers: [AppController],
   providers: [

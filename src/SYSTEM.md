@@ -18,11 +18,12 @@ Hệ thống Quản lý Thư viện là một ứng dụng web hiện đại đ�
 ### 📊 Database Schema Overview
 
 ```
-🔑 Core Entities: 20 tables
+🔑 Core Entities: 22 tables
 👥 User Management: 3 tables (Users, ReaderTypes, Readers)
 📚 Book Management: 11 tables (Books, Authors, Categories, Publishers, BookAuthors, PhysicalCopies, EBooks, GradeLevels, BookCategories, BookGradeLevels, Locations)
 🖼️ Media Management: 2 tables (Images, Uploads)
 🔄 Transaction Management: 4 tables (BorrowRecords, Reservations, Renewals, Fines)
+📖 Reading History: 2 tables (ReadingHistory, ReadingSessions)
 ```
 
 ### 🗂️ Entity Categories
@@ -84,6 +85,18 @@ Reservations
 - **Reservations**: Đặt trước sách
 - **Renewals**: Gia hạn sách
 - **Fines**: Quản lý phạt
+
+#### 5. **Reading History Layer**
+
+```sql
+ReadingHistory ← Readers
+ReadingHistory ← Books
+ReadingSessions ← Readers
+ReadingSessions ← Books
+```
+
+- **ReadingHistory**: Lịch sử đọc ebook của độc giả
+- **ReadingSessions**: Các session đọc ebook chi tiết
 
 ## 📋 Chi tiết Entities
 
