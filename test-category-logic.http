@@ -1,0 +1,21 @@
+### Test main_category_id với parent/children logic
+
+### 1. Lấy danh sách sách với main_category_id (sẽ bao gồm parent và children)
+GET http://localhost:3000/books?main_category_id=YOUR_CATEGORY_ID&limit=5
+Content-Type: application/json
+
+### 2. Lấy danh sách tất cả book categories để test
+GET http://localhost:3000/book-categories
+Content-Type: application/json
+
+### 3. Lấy chi tiết một category để xem parent/children
+GET http://localhost:3000/book-categories/YOUR_CATEGORY_ID
+Content-Type: application/json
+
+### 4. Lấy sách theo type để so sánh
+GET http://localhost:3000/books?type=physical&limit=5
+Content-Type: application/json
+
+### 5. Lấy sách theo type và main_category_id
+GET http://localhost:3000/books?type=ebook&main_category_id=YOUR_CATEGORY_ID&limit=5
+Content-Type: application/json

@@ -130,6 +130,14 @@ export class BookCategoriesService {
     return entity;
   }
 
+  async findByParentId(parentId: string): Promise<BookCategory[]> {
+    return this.categoryRepo.find({
+      where: { parent_id: parentId },
+      relations: { parent: true },
+      order: { name: 'ASC' },
+    });
+  }
+
   async update(id: string, dto: UpdateBookCategoryDto): Promise<BookCategory> {
     const entity = await this.findOne(id);
 

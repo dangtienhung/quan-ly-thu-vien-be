@@ -100,7 +100,8 @@ export class BooksController {
     name: 'main_category_id',
     required: false,
     type: String,
-    description: 'Lọc theo ID thể loại chính (BookCategories)',
+    description:
+      'Lọc theo ID thể loại chính (BookCategories). Bao gồm cả parent category và tất cả children categories.',
   })
   @ApiQuery({
     name: 'category_id',

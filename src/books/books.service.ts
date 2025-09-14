@@ -61,6 +61,44 @@ export class BooksService {
     private readonly bookGradeLevelsService: BookGradeLevelsService,
   ) {}
 
+  /**
+   * Lấy tất cả category IDs bao gồm parent và children của một category
+   * @param categoryId - ID của category gốc
+   * @returns Array chứa ID của category gốc và tất cả children
+   */
+  private async getCategoryIdsWithChildren(
+    categoryId: string,
+  ): Promise<string[]> {
+    // Lấy category gốc
+    const rootCategory = await this.bookCategoriesService.findOne(categoryId);
+    if (!rootCategory) {
+      return [categoryId]; // Trả về ID gốc nếu không tìm thấy
+    }
+
+    const allCategoryIds = [categoryId]; // Bắt đầu với ID gốc
+
+    // Lấy tất cả children categories (recursive)
+    const getChildrenIds = async (parentId: string): Promise<string[]> => {
+      const children =
+        await this.bookCategoriesService.findByParentId(parentId);
+      const childrenIds: string[] = [];
+
+      for (const child of children) {
+        childrenIds.push(child.id);
+        // Recursively get children of children
+        const grandChildrenIds = await getChildrenIds(child.id);
+        childrenIds.push(...grandChildrenIds);
+      }
+
+      return childrenIds;
+    };
+
+    const childrenIds = await getChildrenIds(categoryId);
+    allCategoryIds.push(...childrenIds);
+
+    return allCategoryIds;
+  }
+
   // Tạo sách mới
   async create(createBookDto: CreateBookDto): Promise<Book> {
     // Kiểm tra thể loại tồn tại
@@ -166,10 +204,13 @@ export class BooksService {
       queryBuilder.andWhere('book.book_type = :type', { type });
     }
 
-    // Thêm điều kiện lọc theo main_category_id nếu có
+    // Thêm điều kiện lọc theo main_category_id nếu có (bao gồm parent và children)
     if (main_category_id) {
-      queryBuilder.andWhere('book.main_category_id = :main_category_id', {
-        main_category_id,
+      // Lấy tất cả category IDs bao gồm parent và children
+      const categoryIds =
+        await this.getCategoryIdsWithChildren(main_category_id);
+      queryBuilder.andWhere('book.main_category_id IN (:...categoryIds)', {
+        categoryIds,
       });
     }
 
