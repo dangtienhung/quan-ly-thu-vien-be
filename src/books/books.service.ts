@@ -742,33 +742,33 @@ export class BooksService {
 
       // Xử lý dữ liệu thống kê theo main category
       const byMainCategory: MainCategoryStatisticsDto[] = mainCategoryStats
-        .filter((stat) => stat.bookCount && parseInt(stat.bookCount) > 0) // Lọc bỏ các record null
+        .filter((stat) => stat.bookcount && parseInt(stat.bookcount) > 0) // Lọc bỏ các record null
         .map((stat) => ({
-          mainCategoryId: stat.mainCategoryId,
-          mainCategoryName: stat.mainCategoryName,
-          bookCount: parseInt(stat.bookCount),
-          physicalBookCount: parseInt(stat.physicalBookCount),
-          ebookCount: parseInt(stat.ebookCount),
+          mainCategoryId: stat.maincategoryid,
+          mainCategoryName: stat.maincategoryname,
+          bookCount: parseInt(stat.bookcount),
+          physicalBookCount: parseInt(stat.physicalbookcount),
+          ebookCount: parseInt(stat.ebookcount),
           percentage:
-            totalBooks > 0 ? (parseInt(stat.bookCount) / totalBooks) * 100 : 0,
+            totalBooks > 0 ? (parseInt(stat.bookcount) / totalBooks) * 100 : 0,
         }));
 
       // Thêm thống kê cho sách không có main category (nếu có)
       if (
         booksWithoutMainCategory &&
-        parseInt(booksWithoutMainCategory.bookCount) > 0
+        parseInt(booksWithoutMainCategory.bookcount) > 0
       ) {
         byMainCategory.push({
           mainCategoryId: 'no-category',
           mainCategoryName: 'Chưa phân loại',
-          bookCount: parseInt(booksWithoutMainCategory.bookCount),
+          bookCount: parseInt(booksWithoutMainCategory.bookcount),
           physicalBookCount: parseInt(
-            booksWithoutMainCategory.physicalBookCount,
+            booksWithoutMainCategory.physicalbookcount,
           ),
-          ebookCount: parseInt(booksWithoutMainCategory.ebookCount),
+          ebookCount: parseInt(booksWithoutMainCategory.ebookcount),
           percentage:
             totalBooks > 0
-              ? (parseInt(booksWithoutMainCategory.bookCount) / totalBooks) *
+              ? (parseInt(booksWithoutMainCategory.bookcount) / totalBooks) *
                 100
               : 0,
         });

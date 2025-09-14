@@ -712,8 +712,13 @@ export class BorrowRecordsService {
               BorrowStatus.OVERDUE,
             ],
           })
-          .groupBy('daysOverdue')
-          .orderBy('daysOverdue', 'ASC')
+          .groupBy(
+            'CEIL(EXTRACT(EPOCH FROM (:now - borrowRecord.due_date)) / 86400)',
+          )
+          .orderBy(
+            'CEIL(EXTRACT(EPOCH FROM (:now - borrowRecord.due_date)) / 86400)',
+            'ASC',
+          )
           .getRawMany();
 
         byDaysOverdue = daysStats.map((stat) => ({

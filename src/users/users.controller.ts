@@ -664,9 +664,7 @@ export class UsersController {
   @ApiResponse({ status: 500, description: 'Lỗi server khi lấy thống kê.' })
   async getUserStats(): Promise<UserStatsDto> {
     try {
-      console.log('✅ Getting user statistics...');
       const stats = await this.usersService.getUserStats();
-      console.log('✅ User statistics retrieved successfully');
       return stats;
     } catch (error) {
       console.error('❌ Error getting user statistics:', error);
