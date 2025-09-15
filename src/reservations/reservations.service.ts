@@ -138,7 +138,7 @@ export class ReservationsService {
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -164,7 +164,7 @@ export class ReservationsService {
   async findOne(id: string): Promise<Reservation> {
     const reservation = await this.reservationRepository.findOne({
       where: { id },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
     });
 
     if (!reservation) {
@@ -185,7 +185,9 @@ export class ReservationsService {
     const [data, totalItems] = await this.reservationRepository
       .createQueryBuilder('reservation')
       .leftJoinAndSelect('reservation.reader', 'reader')
+      .leftJoinAndSelect('reader.readerType', 'readerType')
       .leftJoinAndSelect('reservation.book', 'book')
+      .leftJoinAndSelect('reservation.physicalCopy', 'physicalCopy')
       .where('reader.fullName ILIKE :query', { query: `%${query}%` })
       .orWhere('book.title ILIKE :query', { query: `%${query}%` })
       .orWhere('reservation.reader_notes ILIKE :query', { query: `%${query}%` })
@@ -223,7 +225,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { status },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -255,7 +257,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { reader_id: readerId },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -287,7 +289,7 @@ export class ReservationsService {
 
     const [data, totalItems] = await this.reservationRepository.findAndCount({
       where: { book_id: bookId },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { priority: 'ASC', created_at: 'ASC' },
       skip,
       take: limit,
@@ -319,7 +321,7 @@ export class ReservationsService {
         status: ReservationStatus.PENDING,
         expiry_date: MoreThan(new Date()),
       },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { expiry_date: 'ASC' },
     });
   }
@@ -336,7 +338,7 @@ export class ReservationsService {
         status: ReservationStatus.PENDING,
         expiry_date: LessThan(new Date()),
       },
-      relations: ['reader', 'book', 'physicalCopy'],
+      relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { expiry_date: 'ASC' },
       skip,
       take: limit,
