@@ -565,7 +565,6 @@ export class ReservationsService {
     expired: number;
     byStatus: { status: string; count: number }[];
     byMonth: { month: string; count: number }[];
-    expiringSoon: number;
   }> {
     const [total, pending, fulfilled, cancelled, expired] = await Promise.all([
       this.reservationRepository.count(),
@@ -611,14 +610,6 @@ export class ReservationsService {
       });
     }
 
-    // Số đặt trước sắp hết hạn (1 ngày tới)
-    const expiringSoon = await this.reservationRepository.count({
-      where: {
-        status: ReservationStatus.PENDING,
-        expiry_date: MoreThan(new Date()),
-      },
-    });
-
     return {
       total,
       pending,
@@ -627,7 +618,6 @@ export class ReservationsService {
       expired,
       byStatus,
       byMonth,
-      expiringSoon,
     };
   }
 

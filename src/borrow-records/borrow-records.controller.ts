@@ -252,10 +252,7 @@ export class BorrowRecordsController {
           },
           description: 'Thống kê theo trạng thái',
         },
-        pendingApproval: {
-          type: 'number',
-          description: 'Số yêu cầu chờ phê duyệt',
-        },
+
         borrowed: { type: 'number', description: 'Số sách đang được mượn' },
         returned: { type: 'number', description: 'Số sách đã trả' },
         overdue: {
@@ -312,7 +309,6 @@ export class BorrowRecordsController {
   async getStats(): Promise<{
     total: number;
     byStatus: { status: string; count: number }[];
-    pendingApproval: number;
     borrowed: number;
     returned: number;
     overdue: number;

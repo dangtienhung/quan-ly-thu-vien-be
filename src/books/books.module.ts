@@ -5,8 +5,10 @@ import { EBook } from 'src/ebooks/entities/ebook.entity';
 import { AuthorsModule } from '../authors/authors.module';
 import { BookAuthorsModule } from '../book-authors/book-authors.module';
 import { BookCategoriesModule } from '../book-categories/book-categories.module';
+import { BookCategory } from '../book-categories/entities/book-category.entity';
 import { BookGradeLevelsModule } from '../book-grade-levels/book-grade-levels.module';
 import { CategoriesModule } from '../categories/categories.module';
+import { Category } from '../categories/entities/category.entity';
 import { PhysicalCopy } from '../physical-copy/entities/physical-copy.entity';
 import { PublishersModule } from '../publishers/publishers.module';
 import { UsersModule } from '../users/users.module';
@@ -16,7 +18,13 @@ import { Book } from './entities/book.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Book, PhysicalCopy, EBook]),
+    TypeOrmModule.forFeature([
+      Book,
+      PhysicalCopy,
+      EBook,
+      Category,
+      BookCategory,
+    ]),
     AuthorsModule,
     forwardRef(() => BookAuthorsModule),
     CategoriesModule,

@@ -461,7 +461,6 @@ export class BorrowRecordsService {
   async getStats(): Promise<{
     total: number;
     byStatus: { status: string; count: number }[];
-    pendingApproval: number;
     borrowed: number;
     returned: number;
     overdue: number;
@@ -489,11 +488,6 @@ export class BorrowRecordsService {
         status: stat.status,
         count: parseInt(stat.count),
       }));
-
-      // Thống kê chi tiết từng trạng thái
-      const pendingApproval = await this.borrowRecordRepository.count({
-        where: { status: BorrowStatus.PENDING_APPROVAL },
-      });
 
       const borrowed = await this.borrowRecordRepository.count({
         where: { status: BorrowStatus.BORROWED },
@@ -607,7 +601,6 @@ export class BorrowRecordsService {
       return {
         total,
         byStatus,
-        pendingApproval,
         borrowed,
         returned,
         overdue,

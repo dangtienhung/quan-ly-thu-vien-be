@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { HierarchicalCategoryStatisticsDto } from './hierarchical-category-statistics.dto';
 
 export class MainCategoryStatisticsDto {
   @ApiProperty({
@@ -58,10 +59,17 @@ export class BookStatisticsResponseDto {
   totalEbooks: number;
 
   @ApiProperty({
-    description: 'Thống kê theo thể loại chính',
+    description: 'Thống kê theo thể loại chính (flat)',
     type: [MainCategoryStatisticsDto],
   })
   byMainCategory: MainCategoryStatisticsDto[];
+
+  @ApiProperty({
+    description: 'Thống kê theo cấu trúc phân cấp thể loại',
+    type: [HierarchicalCategoryStatisticsDto],
+    required: false,
+  })
+  byHierarchicalCategory?: HierarchicalCategoryStatisticsDto[];
 
   @ApiProperty({
     description: 'Thống kê theo loại sách',
@@ -74,4 +82,18 @@ export class BookStatisticsResponseDto {
     physical: number;
     ebook: number;
   };
+
+  @ApiProperty({
+    description: 'Số lượng thể loại chính',
+    example: 5,
+    required: false,
+  })
+  totalMainCategories?: number;
+
+  @ApiProperty({
+    description: 'Số lượng thể loại con',
+    example: 15,
+    required: false,
+  })
+  totalSubCategories?: number;
 }

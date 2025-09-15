@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { AuthorsService } from '../authors/authors.service';
 import { BookAuthorsService } from '../book-authors/book-authors.service';
 import { BookCategoriesService } from '../book-categories/book-categories.service';
+import { BookCategory } from '../book-categories/entities/book-category.entity';
 import { BookGradeLevelsService } from '../book-grade-levels/book-grade-levels.service';
 import { CategoriesService } from '../categories/categories.service';
 import {
@@ -28,6 +29,7 @@ import {
 } from './dto/book-statistics.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { FindAllBooksDto } from './dto/find-all-books.dto';
+import { HierarchicalCategoryStatisticsDto } from './dto/hierarchical-category-statistics.dto';
 import { UpdateBookViewDto, ViewUpdateType } from './dto/update-book-view.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book, BookType } from './entities/book.entity';
@@ -52,6 +54,8 @@ export class BooksService {
     private readonly physicalCopyRepository: Repository<PhysicalCopy>,
     @InjectRepository(EBook)
     private readonly ebookRepository: Repository<EBook>,
+    @InjectRepository(BookCategory)
+    private readonly bookCategoryRepository: Repository<BookCategory>,
     private readonly authorsService: AuthorsService,
     @Inject(forwardRef(() => BookAuthorsService))
     private readonly bookAuthorsService: BookAuthorsService,
@@ -815,18 +819,181 @@ export class BooksService {
         });
       }
 
+      // Tạo thống kê hierarchical
+      const hierarchicalStats =
+        await this.buildHierarchicalStatistics(totalBooks);
+
       return {
         totalBooks,
         totalPhysicalBooks,
         totalEbooks,
         byMainCategory,
+        byHierarchicalCategory: hierarchicalStats.byHierarchicalCategory,
         byType: {
           physical: totalPhysicalBooks,
           ebook: totalEbooks,
         },
+        totalMainCategories: hierarchicalStats.totalMainCategories,
+        totalSubCategories: hierarchicalStats.totalSubCategories,
       };
     } catch (error) {
       console.error('Error in getBookStatistics:', error);
+      throw new BadRequestException(
+        'Database operation failed: ' + error.message,
+      );
+    }
+  }
+
+  // Helper method để tạo thống kê hierarchical
+  private async buildHierarchicalStatistics(totalBooks: number): Promise<{
+    byHierarchicalCategory: HierarchicalCategoryStatisticsDto[];
+    totalMainCategories: number;
+    totalSubCategories: number;
+  }> {
+    try {
+      // Lấy tất cả book categories với quan hệ parent/children
+      const allBookCategories = await this.bookCategoryRepository.find({
+        relations: ['parent', 'children'],
+        order: { name: 'ASC' },
+      });
+
+      // Lấy thống kê sách trực tiếp theo từng book category (không bao gồm children)
+      const directCategoryStats = await this.bookRepository
+        .createQueryBuilder('book')
+        .leftJoin('book.mainCategory', 'mainCategory')
+        .select([
+          'mainCategory.id as categoryId',
+          'mainCategory.name as categoryName',
+          'mainCategory.parent_id as parentId',
+          'COUNT(book.id) as directBookCount',
+          'SUM(CASE WHEN book.book_type = :physicalType THEN 1 ELSE 0 END) as directPhysicalBookCount',
+          'SUM(CASE WHEN book.book_type = :ebookType THEN 1 ELSE 0 END) as directEbookCount',
+        ])
+        .setParameter('physicalType', BookType.PHYSICAL)
+        .setParameter('ebookType', BookType.EBOOK)
+        .where('book.main_category_id IS NOT NULL')
+        .groupBy('mainCategory.id, mainCategory.name, mainCategory.parent_id')
+        .getRawMany();
+
+      // Tạo map cho thống kê trực tiếp theo categoryId
+      const directStatsMap = new Map();
+      directCategoryStats.forEach((stat) => {
+        directStatsMap.set(stat.categoryid, {
+          directBookCount: parseInt(stat.directbookcount) || 0,
+          directPhysicalBookCount: parseInt(stat.directphysicalbookcount) || 0,
+          directEbookCount: parseInt(stat.directebookcount) || 0,
+        });
+      });
+
+      // Hàm tính tổng sách bao gồm children (đệ quy)
+      const calculateTotalStats = (
+        categoryId: string,
+      ): {
+        totalBookCount: number;
+        totalPhysicalBookCount: number;
+        totalEbookCount: number;
+      } => {
+        const directStats = directStatsMap.get(categoryId) || {
+          directBookCount: 0,
+          directPhysicalBookCount: 0,
+          directEbookCount: 0,
+        };
+
+        // Tìm tất cả children của category này
+        const children = allBookCategories.filter(
+          (cat) => cat.parent_id === categoryId,
+        );
+
+        let childrenBookCount = 0;
+        let childrenPhysicalBookCount = 0;
+        let childrenEbookCount = 0;
+
+        // Tính tổng sách của tất cả children
+        for (const child of children) {
+          const childStats = calculateTotalStats(child.id);
+          childrenBookCount += childStats.totalBookCount;
+          childrenPhysicalBookCount += childStats.totalPhysicalBookCount;
+          childrenEbookCount += childStats.totalEbookCount;
+        }
+
+        return {
+          totalBookCount: directStats.directBookCount + childrenBookCount,
+          totalPhysicalBookCount:
+            directStats.directPhysicalBookCount + childrenPhysicalBookCount,
+          totalEbookCount: directStats.directEbookCount + childrenEbookCount,
+        };
+      };
+
+      // Tạo cấu trúc phân cấp với thống kê đúng
+      const buildHierarchicalStructure = (
+        categories: any[],
+        parentId: string | null = null,
+        level: number = 0,
+      ): HierarchicalCategoryStatisticsDto[] => {
+        return categories
+          .filter((cat) => cat.parent_id === parentId)
+          .map((category) => {
+            // Tính thống kê tổng bao gồm children
+            const totalStats = calculateTotalStats(category.id);
+
+            // Lấy thống kê trực tiếp (không bao gồm children)
+            const directStats = directStatsMap.get(category.id) || {
+              directBookCount: 0,
+              directPhysicalBookCount: 0,
+              directEbookCount: 0,
+            };
+
+            // Xây dựng children
+            const children = buildHierarchicalStructure(
+              categories,
+              category.id,
+              level + 1,
+            );
+
+            return {
+              categoryId: category.id,
+              categoryName: category.name,
+              slug: category.name.toLowerCase().replace(/\s+/g, '-'),
+              description: undefined, // BookCategory không có description
+              parentId: category.parent_id,
+              parentName: category.parent?.name,
+              bookCount: totalStats.totalBookCount, // Tổng bao gồm children
+              physicalBookCount: totalStats.totalPhysicalBookCount,
+              ebookCount: totalStats.totalEbookCount,
+              percentage:
+                totalBooks > 0
+                  ? (totalStats.totalBookCount / totalBooks) * 100
+                  : 0,
+              expandable: children.length > 0,
+              expanded: false,
+              children: children.length > 0 ? children : undefined,
+              level,
+              isMainCategory: level === 0,
+              directBookCount: directStats.directBookCount,
+              directPhysicalBookCount: directStats.directPhysicalBookCount,
+              directEbookCount: directStats.directEbookCount,
+            };
+          })
+          .sort((a, b) => b.bookCount - a.bookCount); // Sắp xếp theo số lượng sách giảm dần
+      };
+
+      // Xây dựng cấu trúc phân cấp
+      const hierarchicalCategories =
+        buildHierarchicalStructure(allBookCategories);
+
+      // Đếm số lượng thể loại chính và con
+      const totalMainCategories = hierarchicalCategories.length;
+      const totalSubCategories = allBookCategories.filter(
+        (cat) => cat.parent_id !== null,
+      ).length;
+
+      return {
+        byHierarchicalCategory: hierarchicalCategories,
+        totalMainCategories,
+        totalSubCategories,
+      };
+    } catch (error) {
+      console.error('Error in buildHierarchicalStatistics:', error);
       throw new BadRequestException(
         'Database operation failed: ' + error.message,
       );

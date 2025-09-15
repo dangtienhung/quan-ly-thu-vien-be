@@ -293,10 +293,6 @@ export class ReservationsController {
           },
           description: 'Thống kê theo tháng (6 tháng gần nhất)',
         },
-        expiringSoon: {
-          type: 'number',
-          description: 'Số đặt trước sắp hết hạn (3 ngày tới)',
-        },
       },
     },
   })
@@ -308,7 +304,6 @@ export class ReservationsController {
     expired: number;
     byStatus: { status: string; count: number }[];
     byMonth: { month: string; count: number }[];
-    expiringSoon: number;
   }> {
     return this.reservationsService.getStats();
   }
