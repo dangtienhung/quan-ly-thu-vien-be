@@ -1,6 +1,7 @@
 import { AccountStatus, UserRole } from '../entities/user.entity';
 
 import { ApiProperty } from '@nestjs/swagger';
+import { ReaderTypeName } from 'src/reader-types/entities/reader-type.entity';
 
 export class UserStatsDto {
   @ApiProperty({
@@ -27,6 +28,17 @@ export class UserStatsDto {
     },
   })
   usersByStatus: Record<AccountStatus, number>;
+
+  @ApiProperty({
+    description: 'Số lượng độc giả theo loại độc giả',
+    example: {
+      student: 80,
+      teacher: 25,
+      staff: 15,
+      guest: 5,
+    },
+  })
+  readersByType: Record<ReaderTypeName, number>;
 
   @ApiProperty({
     description: 'Số lượng người dùng mới trong 30 ngày qua',

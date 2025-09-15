@@ -783,8 +783,6 @@ export class BooksService {
         .where('book.main_category_id IS NULL')
         .getRawOne();
 
-      console.log('Raw mainCategoryStats:', mainCategoryStats);
-
       // Xử lý dữ liệu thống kê theo main category
       const byMainCategory: MainCategoryStatisticsDto[] = mainCategoryStats
         .filter((stat) => stat.bookcount && parseInt(stat.bookcount) > 0) // Lọc bỏ các record null

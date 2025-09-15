@@ -573,6 +573,25 @@ export class UsersService {
       {} as Record<AccountStatus, number>,
     );
 
+    // Thống kê theo loại độc giả
+    const readersByType = await this.readerRepository
+      .createQueryBuilder('reader')
+      .leftJoin('reader.readerType', 'readerType')
+      .select('readerType.typeName', 'typeName')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('readerType.typeName')
+      .getRawMany();
+
+    const readerTypeStats = readersByType.reduce(
+      (acc, item) => {
+        if (item.typeName) {
+          acc[item.typeName] = parseInt(item.count);
+        }
+        return acc;
+      },
+      {} as Record<ReaderTypeName, number>,
+    );
+
     // Người dùng mới trong 30 ngày qua
     const newUsersLast30Days = await this.userRepository.count({
       where: {
@@ -615,6 +634,7 @@ export class UsersService {
       totalUsers,
       usersByRole: roleStats,
       usersByStatus: statusStats,
+      readersByType: readerTypeStats,
       newUsersLast30Days,
       activeUsersLast7Days,
       neverLoggedInUsers,
