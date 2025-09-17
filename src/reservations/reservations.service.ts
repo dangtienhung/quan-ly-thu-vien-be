@@ -250,13 +250,19 @@ export class ReservationsService {
   // Lấy đặt trước theo độc giả
   async findByReader(
     readerId: string,
-    paginationQuery: PaginationQueryDto,
+    paginationQuery: PaginationQueryDto & { status?: ReservationStatus },
   ): Promise<PaginatedResponseDto<Reservation>> {
-    const { page = 1, limit = 10 } = paginationQuery;
+    const { page = 1, limit = 10, status } = paginationQuery;
     const skip = (page - 1) * limit;
 
+    // Tạo where condition
+    const whereCondition: any = { reader_id: readerId };
+    if (status) {
+      whereCondition.status = status;
+    }
+
     const [data, totalItems] = await this.reservationRepository.findAndCount({
-      where: { reader_id: readerId },
+      where: whereCondition,
       relations: ['reader', 'reader.readerType', 'book', 'physicalCopy'],
       order: { created_at: 'DESC' },
       skip,

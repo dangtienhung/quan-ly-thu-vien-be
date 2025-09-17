@@ -1,0 +1,37 @@
+### Test Reservations by Reader API with Status Filter
+
+# Test 1: Get all reservations for a reader (no status filter)
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+
+###
+
+# Test 2: Get pending reservations for a reader
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000?status=pending
+Content-Type: application/json
+
+###
+
+# Test 3: Get fulfilled reservations for a reader
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000?status=fulfilled
+Content-Type: application/json
+
+###
+
+# Test 4: Get cancelled reservations for a reader
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000?status=cancelled
+Content-Type: application/json
+
+###
+
+# Test 5: Get expired reservations for a reader
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000?status=expired
+Content-Type: application/json
+
+###
+
+# Test 6: Get reservations with pagination and status filter
+GET http://localhost:8000/api/reservations/reader/550e8400-e29b-41d4-a716-446655440000?status=pending&page=1&limit=5
+Content-Type: application/json
+
+###

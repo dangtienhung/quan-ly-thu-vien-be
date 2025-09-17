@@ -179,6 +179,13 @@ export class ReservationsController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 10)',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ReservationStatus,
+    description:
+      'Trạng thái đặt trước để lọc (pending, fulfilled, cancelled, expired)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách đặt trước theo độc giả thành công.',
