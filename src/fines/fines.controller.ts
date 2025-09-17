@@ -279,10 +279,6 @@ export class FinesController {
         total: { type: 'number', description: 'Tổng số bản ghi phạt' },
         unpaid: { type: 'number', description: 'Số phạt chưa thanh toán' },
         paid: { type: 'number', description: 'Số phạt đã thanh toán' },
-        partially_paid: {
-          type: 'number',
-          description: 'Số phạt thanh toán một phần',
-        },
         waived: { type: 'number', description: 'Số phạt được miễn' },
         totalAmount: { type: 'number', description: 'Tổng số tiền phạt' },
         totalPaid: {
@@ -324,7 +320,6 @@ export class FinesController {
     total: number;
     unpaid: number;
     paid: number;
-    partially_paid: number;
     waived: number;
     totalAmount: number;
     totalPaid: number;
@@ -390,10 +385,10 @@ export class FinesController {
           example: 'cash',
           enum: ['cash', 'card', 'bank_transfer', 'online'],
         },
-        transactionId: {
+        librarian_notes: {
           type: 'string',
-          description: 'Mã giao dịch thanh toán',
-          example: 'TXN123456789',
+          description: 'Ghi chú của thủ thư',
+          example: 'Thanh toán bằng tiền mặt',
         },
       },
     },
@@ -410,14 +405,20 @@ export class FinesController {
   async payFine(
     @Param('id') id: string,
     @Body()
-    body: { amount: number; paymentMethod: string; transactionId?: string },
+    body: { amount: number; paymentMethod: string; librarian_notes?: string },
   ): Promise<Fine> {
-    return this.finesService.payFine(
+    const updatedFine = await this.finesService.payFine(
       id,
       body.amount,
       body.paymentMethod,
-      body.transactionId,
+      body.librarian_notes,
     );
+
+    // Log để debug
+    console.log('Updated fine status:', updatedFine.status);
+    console.log('Updated fine paid_amount:', updatedFine.paid_amount);
+
+    return updatedFine;
   }
 
   @Patch(':id/waive')

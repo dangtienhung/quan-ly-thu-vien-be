@@ -26,9 +26,7 @@ export class FinesService {
   // Tạo mới bản ghi phạt
   async create(createFineDto: CreateFineDto): Promise<Fine> {
     // Kiểm tra bản ghi mượn sách có tồn tại không
-    const borrowRecord = await this.borrowRecordsService.findOne(
-      createFineDto.borrow_id,
-    );
+    await this.borrowRecordsService.findOne(createFineDto.borrow_id);
 
     // Kiểm tra số tiền đã thanh toán không được lớn hơn số tiền phạt
     if (
@@ -42,12 +40,11 @@ export class FinesService {
 
     // Tự động tính toán trạng thái dựa trên số tiền đã thanh toán
     let status = FineStatus.UNPAID;
-    if (createFineDto.paid_amount) {
-      if (createFineDto.paid_amount >= createFineDto.fine_amount) {
-        status = FineStatus.PAID;
-      } else if (createFineDto.paid_amount > 0) {
-        status = FineStatus.PARTIALLY_PAID;
-      }
+    if (
+      createFineDto.paid_amount &&
+      createFineDto.paid_amount >= createFineDto.fine_amount
+    ) {
+      status = FineStatus.PAID;
     }
 
     const fine = this.fineRepository.create({
@@ -81,7 +78,7 @@ export class FinesService {
     overdueDays: number,
     dailyRate: number = 10000,
   ): Promise<Fine> {
-    const borrowRecord = await this.borrowRecordsService.findOne(borrowId);
+    await this.borrowRecordsService.findOne(borrowId);
 
     // Kiểm tra xem đã có phạt trễ hạn cho bản ghi này chưa
     const existingFine = await this.fineRepository.findOne({
@@ -126,7 +123,12 @@ export class FinesService {
     const skip = (page - 1) * limit;
 
     const [data, totalItems] = await this.fineRepository.findAndCount({
-      relations: ['borrowRecord'],
+      relations: [
+        'borrowRecord',
+        'borrowRecord.reader',
+        'borrowRecord.physicalCopy',
+        'borrowRecord.physicalCopy.book',
+      ],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -208,7 +210,12 @@ export class FinesService {
 
     const [data, totalItems] = await this.fineRepository.findAndCount({
       where: { status },
-      relations: ['borrowRecord'],
+      relations: [
+        'borrowRecord',
+        'borrowRecord.reader',
+        'borrowRecord.physicalCopy',
+        'borrowRecord.physicalCopy.book',
+      ],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
@@ -333,7 +340,9 @@ export class FinesService {
     const fine = await this.findOne(id);
 
     // Xử lý ngày tháng nếu có
-    const updateData: any = { ...updateFineDto };
+    const updateData: Partial<Fine> = {};
+    Object.assign(updateData, updateFineDto);
+
     if (updateFineDto.fine_date) {
       updateData.fine_date = new Date(updateFineDto.fine_date);
     }
@@ -348,8 +357,6 @@ export class FinesService {
     if (updateFineDto.paid_amount !== undefined) {
       if (updateFineDto.paid_amount >= fine.fine_amount) {
         updateData.status = FineStatus.PAID;
-      } else if (updateFineDto.paid_amount > 0) {
-        updateData.status = FineStatus.PARTIALLY_PAID;
       } else {
         updateData.status = FineStatus.UNPAID;
       }
@@ -364,7 +371,7 @@ export class FinesService {
     id: string,
     amount: number,
     paymentMethod: string,
-    transactionId?: string,
+    librarianNotes?: string,
   ): Promise<Fine> {
     const fine = await this.findOne(id);
 
@@ -376,26 +383,47 @@ export class FinesService {
       throw new BadRequestException('Phạt đã được miễn');
     }
 
-    const newPaidAmount = fine.paid_amount + amount;
-    if (newPaidAmount > fine.fine_amount) {
+    if (amount > fine.fine_amount) {
       throw new BadRequestException('Số tiền thanh toán vượt quá số tiền phạt');
     }
 
-    fine.paid_amount = newPaidAmount;
+    // Cập nhật thông tin thanh toán
+    fine.paid_amount = amount;
     fine.payment_date = new Date();
     fine.payment_method = paymentMethod;
-    if (transactionId) {
-      fine.transaction_id = transactionId;
+    fine.transaction_id = `TXN_${Date.now()}`;
+
+    // Cập nhật ghi chú của thủ thư nếu có
+    if (librarianNotes) {
+      fine.librarian_notes = librarianNotes;
     }
 
-    // Cập nhật trạng thái
-    if (newPaidAmount >= fine.fine_amount) {
+    // Cập nhật trạng thái: nếu thanh toán đủ thì chuyển thành PAID
+    if (amount >= fine.fine_amount) {
       fine.status = FineStatus.PAID;
     } else {
-      fine.status = FineStatus.PARTIALLY_PAID;
+      fine.status = FineStatus.UNPAID;
     }
 
-    return await this.fineRepository.save(fine);
+    // Lưu và trả về với relations để frontend có đầy đủ thông tin
+    await this.fineRepository.save(fine);
+
+    // Lấy lại fine với đầy đủ relations
+    const updatedFine = await this.fineRepository.findOne({
+      where: { id },
+      relations: [
+        'borrowRecord',
+        'borrowRecord.reader',
+        'borrowRecord.physicalCopy',
+        'borrowRecord.physicalCopy.book',
+      ],
+    });
+
+    if (!updatedFine) {
+      throw new NotFoundException(`Không tìm thấy bản ghi phạt với ID ${id}`);
+    }
+
+    return updatedFine;
   }
 
   // Miễn phạt
@@ -425,7 +453,6 @@ export class FinesService {
     total: number;
     unpaid: number;
     paid: number;
-    partially_paid: number;
     waived: number;
     totalAmount: number;
     totalPaid: number;
@@ -440,24 +467,21 @@ export class FinesService {
     const paid = await this.fineRepository.count({
       where: { status: FineStatus.PAID },
     });
-    const partially_paid = await this.fineRepository.count({
-      where: { status: FineStatus.PARTIALLY_PAID },
-    });
     const waived = await this.fineRepository.count({
       where: { status: FineStatus.WAIVED },
     });
 
     // Tính tổng tiền
-    const totalAmountResult = await this.fineRepository
+    const totalAmountResult = (await this.fineRepository
       .createQueryBuilder('fine')
       .select('SUM(fine.fine_amount)', 'total')
-      .getRawOne();
+      .getRawOne()) as { total: string };
     const totalAmount = parseFloat(totalAmountResult.total) || 0;
 
-    const totalPaidResult = await this.fineRepository
+    const totalPaidResult = (await this.fineRepository
       .createQueryBuilder('fine')
       .select('SUM(fine.paid_amount)', 'total')
-      .getRawOne();
+      .getRawOne()) as { total: string };
     const totalPaid = parseFloat(totalPaidResult.total) || 0;
 
     const totalUnpaid = totalAmount - totalPaid;
@@ -488,21 +512,24 @@ export class FinesService {
       total,
       unpaid,
       paid,
-      partially_paid,
       waived,
       totalAmount,
       totalPaid,
       totalUnpaid,
-      byType: byType.map((item) => ({
-        type: item.type,
-        count: parseInt(item.count),
-        amount: parseFloat(item.amount),
-      })),
-      byMonth: byMonth.map((item) => ({
-        month: item.month,
-        count: parseInt(item.count),
-        amount: parseFloat(item.amount),
-      })),
+      byType: byType.map(
+        (item: { type: string; count: string; amount: string }) => ({
+          type: item.type,
+          count: parseInt(item.count),
+          amount: parseFloat(item.amount),
+        }),
+      ),
+      byMonth: byMonth.map(
+        (item: { month: string; count: string; amount: string }) => ({
+          month: item.month,
+          count: parseInt(item.count),
+          amount: parseFloat(item.amount),
+        }),
+      ),
     };
   }
 }
