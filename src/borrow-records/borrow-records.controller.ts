@@ -141,6 +141,13 @@ export class BorrowRecordsController {
     type: String,
     description: 'Tìm kiếm theo tên sách hoặc tên người dùng đã mượn',
   })
+  @ApiQuery({
+    name: 'readerId',
+    required: false,
+    type: String,
+    description:
+      'Filter theo readerId. Hỗ trợ nhiều ID, phân tách bằng dấu phẩy (id1,id2,...)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách bản ghi mượn sách theo trạng thái thành công.',

@@ -146,7 +146,7 @@ export class BorrowRecordsService {
     status: BorrowStatus,
     paginationQuery: FindByStatusWithSearchDto,
   ): Promise<PaginatedResponseDto<BorrowRecord>> {
-    const { page = 1, limit = 10, q } = paginationQuery;
+    const { page = 1, limit = 10, q, readerId } = paginationQuery;
     const skip = (page - 1) * limit;
 
     // Sử dụng QueryBuilder để hỗ trợ search
@@ -157,6 +157,20 @@ export class BorrowRecordsService {
       .leftJoinAndSelect('physicalCopy.book', 'book')
       .leftJoinAndSelect('borrowRecord.librarian', 'librarian')
       .where('borrowRecord.status = :status', { status });
+
+    // Filter theo readerId (hỗ trợ nhiều ID, phân tách bằng dấu phẩy)
+    if (readerId) {
+      const readerIds = readerId
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => Boolean(id));
+
+      if (readerIds.length > 0) {
+        queryBuilder.andWhere('borrowRecord.reader_id IN (:...readerIds)', {
+          readerIds,
+        });
+      }
+    }
 
     // Thêm điều kiện search với OR
     if (q) {
